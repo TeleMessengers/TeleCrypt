@@ -35,7 +35,7 @@ function onContact() {
     window.open('mailto:kontakt@connect2x.de');
 }
 function onSource() {
-    window.open('https://gitlab.com/connect2x/trixnity-messenger/tammy')
+    window.open('https://gitlab.com/connect2x/tammy')
 }
 </script>
 

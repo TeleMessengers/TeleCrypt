@@ -1,6 +1,7 @@
 <template>
     <div class="container">
-        <div class="card-caption-1">Tammy is open source</div>
+        <img src="../assets/icon-gitlab.png" class="product-icon" />
+        <div class="card-caption-1">{{ $t('imprint.openSource.title') }}</div>
         <div class="card-caption-2">
             Tammy is built on <a href="https://trixnity.gitlab.io/trixnity/">Trixnity</a> and <a
                 href="https://matrix.org/">Matrix</a> and so is the code base of Tammy open.
@@ -8,13 +9,14 @@
         <br />
         <div class="button">
             <v-btn rounded="xl" size="x-large" block @click="onSource">
-                Tammy on Gitlab
+                {{ $t('imprint.openSource.button') }}
             </v-btn>
         </div>
         <br />
         <br />
         <br />
-        <div class="card-caption-1">Contact Us</div>
+        <img src="../assets/icon-tammy.png" class="product-icon" />
+        <div class="card-caption-1">{{ $t('imprint.contactUs.title') }}</div>
         <div class="card-caption-2">
             If you have questions, feedback or want to work with us to realize your own project,
             you can contact us via <a>kontakt@connect2x.de</a>
@@ -22,8 +24,20 @@
         <br />
         <div class="button">
             <v-btn rounded="xl" size="x-large" block @click="onContact">
-                Send a Request
+                {{ $t('imprint.contactUs.button') }}
             </v-btn>
+        </div>
+        <div class="imprint-container">
+            <div class="imprint">
+                Anbieter nach § 6 des Gesetzes über die Nutzung von Telediensten (TDG)/ Mediendienste-Staatsvertrag
+                (MDStV)<br />
+                connect2x GmbH<br />
+                Geschäftsführerende: Benedict Benken, Michael Thiele<br />
+                Kraftwerk Mitte 7<br />
+                01067 Dresden<br />
+                E-Mail: kontakt@connect2x.de<br />
+                Amtsgericht Dresden HRB 43737<br />
+            </div>
         </div>
     </div>
 </template>
@@ -42,7 +56,6 @@ function onSource() {
 
 <style scoped>
 .container {
-    margin-bottom: 128px;
     width: 100%;
 }
 
@@ -51,6 +64,12 @@ function onSource() {
     left: 50%;
     width: 50%;
     margin: 0 auto;
+}
+
+.product-icon {
+    scale: 50%;
+    transform: translate(0, 100px);
+    filter: grayscale(66%) opacity(66%);
 }
 
 .card-caption-1 {
@@ -65,5 +84,21 @@ function onSource() {
     font-weight: 300;
     width: 50%;
     margin: 0 auto;
+}
+
+.imprint-container {
+    margin-top: 128px;
+    width: 100%;
+    /* height: 200px; */
+    display: flex;
+    flex: auto;
+    background: #88888844;
+}
+
+.imprint {
+    text-align: start;
+    font-size: 0.8em;
+    font-weight: 150;
+    margin: 24px;
 }
 </style>

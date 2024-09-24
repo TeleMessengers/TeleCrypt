@@ -9,22 +9,22 @@ tammy = "1.0.0"
 tammyVersionCode = "1"
 appName = "Tammy"
 
-trixnityMessenger = "2.2.1"
+trixnityMessenger = "2.2.3-LOCAL"
 
 composeMultiplatform = "1.7.0-beta02" # https://github.com/JetBrains/compose-multiplatform/releases
 aboutLibraries = "11.2.1" # https://github.com/mikepenz/AboutLibraries/releases
 downloadGradlePlugin = "5.6.0" # https://github.com/michel-kraemer/gradle-download-task/releases
 copyWebpackPlugin = "12.0.2" # https://github.com/webpack-contrib/copy-webpack-plugin/releases
-logback = "1.5.6" # https://github.com/qos-ch/logback/tags
-slf4j = "2.0.13" # https://github.com/qos-ch/slf4j/tags
-kotlinxCoroutines = "1.8.1" # https://github.com/Kotlin/kotlinx.coroutines/releases
+logback = "1.5.8" # https://github.com/qos-ch/logback/tags
+slf4j = "2.0.15" # https://github.com/qos-ch/slf4j/tags
+kotlinxCoroutines = "1.9.0" # https://github.com/Kotlin/kotlinx.coroutines/releases
 
 activity = "1.9.2" # https://developer.android.com/jetpack/androidx/releases/activity
 logbackAndroid = "3.0.0" # https://github.com/tony19/logback-android/releases
 workManager = "2.9.1" # https://developer.android.com/jetpack/androidx/releases/work
-liveData = "2.8.5" # https://developer.android.com/jetpack/androidx/releases/lifecycle
+liveData = "2.8.6" # https://developer.android.com/jetpack/androidx/releases/lifecycle
 appcompat = "1.7.0" # https://developer.android.com/jetpack/androidx/releases/appcompat
-firebase = "33.2.0" # https://firebase.google.com/support/release-notes/android
+firebase = "33.3.0" # https://firebase.google.com/support/release-notes/android
 
 [libraries]
 trixnity-messenger = { module = "de.connect2x:trixnity-messenger", version.ref = "trixnityMessenger" }

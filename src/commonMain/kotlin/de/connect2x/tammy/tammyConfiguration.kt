@@ -1,8 +1,6 @@
 package de.connect2x.tammy
 
 import de.connect2x.messenger.compose.view.composeViewModule
-import de.connect2x.trixnity.messenger.HttpClientFactory
-import de.connect2x.trixnity.messenger.HttpUserAgent
 import de.connect2x.trixnity.messenger.i18n.DefaultLanguages
 import de.connect2x.trixnity.messenger.i18n.I18n
 import de.connect2x.trixnity.messenger.i18n.Languages
@@ -10,15 +8,11 @@ import de.connect2x.trixnity.messenger.i18n.platformGetSystemLangModule
 import de.connect2x.trixnity.messenger.multi.MatrixMultiMessengerConfiguration
 import de.connect2x.trixnity.messenger.platformMatrixMessengerSettingsHolderModule
 import de.connect2x.trixnity.messenger.util.RootPath
-import io.ktor.client.*
-import io.ktor.client.plugins.*
 import org.koin.dsl.module
 
 fun tammyConfiguration(): MatrixMultiMessengerConfiguration.() -> Unit = {
     appName = BuildConfig.appName
-    packageName = "de.connect2x.${BuildConfig.appNameCleaned}"
-    privacyInfoUrl = "https://gitlab.com/connect2x/trixnity-messenger/trixnity-messenger"
-    imprintUrl = "https://gitlab.com/connect2x/trixnity-messenger/trixnity-messenger"
+    packageName = "de.connect2x"
     licenses = BuildConfig.licenses
     sendLogsEmailAddress = "error-reports@connect2x.de"
     urlProtocol = BuildConfig.appNameCleaned

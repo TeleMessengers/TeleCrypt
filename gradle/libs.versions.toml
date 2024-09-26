@@ -9,7 +9,7 @@ tammy = "1.0.0"
 tammyVersionCode = "1"
 appName = "Tammy"
 
-trixnityMessenger = "2.2.3-DEV-23110841"
+trixnityMessenger = "2.2.3-DEV-23200989" # https://gitlab.com/connect2x/trixnity-messenger/trixnity-messenger/-/packages
 
 composeMultiplatform = "1.7.0-beta02" # https://github.com/JetBrains/compose-multiplatform/releases
 aboutLibraries = "11.2.1" # https://github.com/mikepenz/AboutLibraries/releases

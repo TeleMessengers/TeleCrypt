@@ -47,23 +47,15 @@
         <service
                 android:name="de.connect2x.messenger.android.MatrixMultiMessengerService"
                 android:exported="false" />
+
         <service
                 android:name="de.connect2x.messenger.android.push.FcmService"
                 android:enabled="false"
-                android:exported="false">
+                android:exported="true">
             <intent-filter>
                 <action android:name="com.google.firebase.MESSAGING_EVENT" />
             </intent-filter>
         </service>
-
-        <receiver
-                android:name="de.connect2x.messenger.android.push.WakeUpBroadcastReceiver"
-                android:exported="false">
-            <intent-filter>
-                <action android:name="android.intent.action.MY_PACKAGE_REPLACED" />
-                <action android:name="android.intent.action.BOOT_COMPLETED" />
-            </intent-filter>
-        </receiver>
 
         <provider
                 android:name="androidx.core.content.FileProvider"

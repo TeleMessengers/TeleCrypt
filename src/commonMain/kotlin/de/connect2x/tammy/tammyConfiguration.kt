@@ -15,8 +15,10 @@ fun tammyConfiguration(): MatrixMultiMessengerConfiguration.() -> Unit = {
     packageName = "de.connect2x"
     licenses = BuildConfig.licenses
     sendLogsEmailAddress = "error-reports@connect2x.de"
+    privacyInfoUrl = "https://gitlab.com/connect2x/tammy/-/blob/main/PRIVACY.md"
+    imprintUrl = "https://gitlab.com/connect2x/tammy/-/blob/main/IMPRINT.md"
     urlProtocol = BuildConfig.appNameCleaned
-    pushUrl = "https://sygnal.demo.timmy-messenger.de/_matrix/push/v1/notify" // TODOlogo change
+    pushUrl = "https://sygnal.demo.timmy-messenger.de/_matrix/push/v1/notify"
     modules += listOf(
         composeViewModule(),
         tammyModule(),

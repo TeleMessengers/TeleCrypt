@@ -5,12 +5,14 @@ jvmTarget = "17"
 androidCompileSDK = "34"
 androidMinimalSDK = "28"
 androidTargetSDK = "34"
-tammy = "1.0.0"
-tammyVersionCode = "1"
-appName = "Tammy"
+appVersion = "1.0.0" # the version used for release or dev builds
+appVersionCode = "1" # the version used for Android release or dev builds
+appReleasedVersion = "1.0.0" # the version used on the website
 
-trixnityMessenger = "2.2.3-DEV-23200989" # https://gitlab.com/connect2x/trixnity-messenger/trixnity-messenger/-/packages
+trixnityMessenger = "2.2.3-DEV-23374364" # https://gitlab.com/connect2x/trixnity-messenger/trixnity-messenger/-/packages
 
+androidGradle = "8.5.2" # https://developer.android.com/reference/tools/gradle-api
+googleServices = "4.4.2" # https://firebase.google.com/support/release-notes/android
 composeMultiplatform = "1.7.0-beta02" # https://github.com/JetBrains/compose-multiplatform/releases
 aboutLibraries = "11.2.1" # https://github.com/mikepenz/AboutLibraries/releases
 downloadGradlePlugin = "5.6.0" # https://github.com/michel-kraemer/gradle-download-task/releases
@@ -46,8 +48,10 @@ kotlinx-coroutines-swing = { module = "org.jetbrains.kotlinx:kotlinx-coroutines-
 android-common = ["androidx-appcompat", "androidx-work-runtime-ktx", "androidx-lifecycle-livedata-ktx", "androidx-activity-compose", "logback-android"]
 
 [plugins]
-# ui
+kotlin-multiplatform = { id = "org.jetbrains.kotlin.multiplatform", version.ref = "kotlin" }
+android-application = { id = "com.android.application", version.ref = "androidGradle" }
 aboutlibraries-plugin = { id = "com.mikepenz.aboutlibraries.plugin", version.ref = "aboutLibraries" }
 download-plugin = { id = "de.undercouch.download", version.ref = "downloadGradlePlugin" }
 compose-multiplatform = { id = "org.jetbrains.compose", version.ref = "composeMultiplatform" }
 compose-compiler = { id = "org.jetbrains.kotlin.plugin.compose", version.ref = "kotlin" }
+google-services = { id = "com.google.gms.google-services", version.ref = "googleServices" }

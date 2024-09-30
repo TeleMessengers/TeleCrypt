@@ -1,18 +1,37 @@
 # Tammy
 
-White label messenger based on [Trixnity Messenger](https://gitlab.com/connect2x/trixnity-messenger/trixnity-messenger). Please consult the Readme there for additional information.
+White label messenger based on [Trixnity Messenger](https://gitlab.com/connect2x/trixnity-messenger/trixnity-messenger).
+Please consult the Readme there for additional information.
 
 ## Run locally
-If you run the messenger from the IDE or command line, the 
+
+If you run the messenger from the IDE or command line, the
+
 ### Desktop
+
 `./gradlew run`
 
 ### Android
-In Android Studio or IntelliJ, choose the Android configuration and run on an emulated  or your physical device.
+
+In Android Studio or IntelliJ, choose the Android configuration and run on an emulated or your physical device.
 
 ### Web
-Please **note**: web is still experimental and is missing some features that are present in the other versions. We are working on it.
+
+Please **note**: web is still experimental and is missing some features that are present in the other versions. We are
+working on it.
 
 `./gradlew webBrowserDevelopmentRun`
 
-To use the local version, you need to disable cross-origin checking in your browser. On Mac, you can use the following: `open -a Google\ Chrome --args --disable-web-security --user-data-dir="tmp"`
+## Create release
+
+To create a release, you need to create a version-tag of the form `v1.2.3` in GitLab. The version must be the same as in
+`gradle/lib.versions.toml`. This will trigger a pipeline creating all distributions, uploading them into package
+registry and linking them in a newly created GitLab release.
+
+## Important environment variables
+
+This does not include default GitLab environment variables that are used.
+
+- MSIX_CODE_SIGNING_TIMESTAMP_SERVER: timestamp server for MSIX signing
+- MSIX_CODE_SIGNING_THUMBPRINT: thumbprint of certificate that should be used for MSIX signing
+- // FIXME android

@@ -20,20 +20,18 @@ variables:
 .if-merge-request: &if-merge-request
   - if: $CI_MERGE_REQUEST_SOURCE_BRANCH_NAME
 
-.if-merge-request-or-main: &if-merge-request-or-main
+.if-main: &if-main
   - if: $CI_PIPELINE_SOURCE == "schedule"
     when: never
   - if: $CI_COMMIT_BRANCH == $CI_DEFAULT_BRANCH
-  - if: $CI_MERGE_REQUEST_SOURCE_BRANCH_NAME
 
 .if-release: &if-release
   - if: '$CI_COMMIT_TAG =~ /^v\d+.\d+.\d+.*/'
 
 .docker-variables: &docker-variables
-  DOCKER_HOST: tcp://docker:2376
-  DOCKER_TLS_CERTDIR: "/certs"
-  DOCKER_TLS_VERIFY: 1
-  DOCKER_CERT_PATH: "${DOCKER_TLS_CERTDIR}/client"
+  DOCKER_HOST: tcp://docker:2375
+  DOCKER_TLS_CERTDIR: ""
+  DOCKER_DRIVER: overlay2
 
 .build-cache: &build-cache
   paths:
@@ -63,79 +61,91 @@ changelog:
         exit 1
       fi
 
-binaries-android:
+binaries-linux:
   stage: binaries
-  tags: [ "connect2x-linux" ]
+  tags: [ "saas-linux-large-amd64" ]
   image: $BUILD_LINUX_IMAGE_NAME
-  services:
-    - docker:20-dind
   variables: *docker-variables
   cache: *build-cache
+  rules:
+    - *if-main
   artifacts:
     name: binaries
     when: on_success
     paths:
-      - "compose-app/build/outputs/bundle/release"
-  rules:
-    - *if-release
+      - "build/outputs/bundle/release"
+      - "build/compose/binaries"
   script:
     - echo $ANDROID_RELEASE_STORE_FILE_BASE64 | base64 --decode > $ANDROID_RELEASE_STORE_FILE
-    - ./gradlew prepareComposeResourcesTaskForCommonMain
-    - ./gradlew :compose-app:bundleRelease --stacktrace
+    - ./gradlew
+      uploadPlatformZipDistributable
+      uploadWebZipDistributable
+      uploadLinuxDistributable
+      uploadAndroidDistributable
+      --stacktrace
 
 binaries-win:
   stage: binaries
   tags: [ "connect2x-win" ]
   cache: *build-cache
+  rules:
+    - *if-main
   artifacts:
-    name: win
+    name: binaries
     when: on_success
     paths:
-      - "compose-app/build/compose/binaries"
-      - "compose-app/build/msix"
-  rules:
-    - *if-release
+      - "build/compose/binaries"
   script:
-    - ./gradlew prepareComposeResourcesTaskForCommonMain
-    - ./gradlew :compose-app:packageMsix --stacktrace
+    - ./gradlew
+      uploadPlatformZipDistributable
+      uploadWindowsDistributable
+      --stacktrace
 
-release-win:
+binaries-mac:
+  stage: binaries
+  tags: [ "connect2x-mac" ]
+  cache: *build-cache
+  rules:
+    - *if-main
+  artifacts:
+    name: binaries
+    when: on_success
+    paths:
+      - "build/compose/binaries"
+  script:
+    - ./gradlew
+      uploadPlatformZipDistributable
+      uploadMacDistributable
+      --stacktrace
+
+release:
   stage: release
-  environment:
-    name: production
-  image: ubuntu:latest
-  tags: [ "connect2x-linux" ]
+  tags: [ "saas-linux-small-amd64" ]
+  image: $BUILD_LINUX_IMAGE_NAME
+  variables: *docker-variables
   rules:
     - *if-release
-  variables:
-    SSH_SERVER_PUBLIC_KEY: |
-      |1|rkXUG6Zg2U7Icsi1+W+16Bf0Agg=|aIDGBml+j9OBTthTodbxWcKZGN8= ssh-rsa AAAAB3NzaC1yc2EAAAADAQABAAABgQD24yORSNdYYIm+huvj+F9wc+BFsGSdi2V7uC+P54T1xJt+ll1LezHHps5jgRJU5JYEeGRWwRjaTMn+wNq8RwtEoDo830DckEzu/KqOVMi2o77XFi2e6oIcUKwvpouHHrSyLgeyipLaV392QNISj+AT3IXBICo/gXVj82kKN//je7hLkVnPX3/7fE3CWKTiTAh3iRa302gfPuDutaJ9Iu0Z+LLk/P5UWSdjhcXKMwPBWrQTK9Is9JI7YH0Kd49NyXrz3dgmyhm1HYtCu5yvwopcMf0iaFG40COlIHx8GzOp7/6E9mULWKS2A2942uxmRIxL71Cs1oTWJgck1ymNVv5vIPZ+/9ROrZtfoHuK8LIIZWupvFqBbYduJ7Th9rPnlNmI7I0QgTt7iRuxjyCNs7TdBZLidnEtNzcHo9iQ1kkWY0BRGk3PvkgmknzMmc43D4dj7AEK1YOVYXfYmeZXtLnK2BjYZcJ1bcFfvNOrPyQ+pVw78ZWm+n7XQgXkwKGr+2c=
-      |1|2ywjh4MQnSRFiNbupqXVfgDB1B0=|6neQereUz86gfJcvhEIOGrCXX3o= ecdsa-sha2-nistp256 AAAAE2VjZHNhLXNoYTItbmlzdHAyNTYAAAAIbmlzdHAyNTYAAABBBOGEPcfO5e/GIvHJrOb92rpz5x6xRR7V7QpAybe01OVA3xxgEXStOAHx+an8CGiyeRWrcuP9WQJLdkwRpLgF5fY=
-      |1|NqjIeCIEYbER3NUsDTJfBNO4rdY=|QxGhn1HkpIx4BBILLbI44AnIIIw= ssh-ed25519 AAAAC3NzaC1lZDI1NTE5AAAAIIk09gBfcCwKjFFF9dKn2pNTrplhAVjY4TrJABwUJWUg
-    SSH_USER: my_webapp__3
-    SSH_SERVER: connect2x.de
-  before_script:
-    - "which ssh-agent || ( apt-get update -y && apt-get install openssh-client lftp -y )"
-    - eval $(ssh-agent -s)
-    - mkdir -p ~/.ssh
-    - chmod 700 ~/.ssh
-    - echo $SSH_SERVER_PUBLIC_KEY >> ~/.ssh/known_hosts
-    - chmod 644 ~/.ssh/known_hosts
+  artifacts:
+    name: pages
+    when: on_success
+    paths:
+      - "public/"
   script:
-    - lftp -e "open sftp://connect2x.de; user $SSH_USER $RELEASE_SSH_PASSWORD; mirror -X .* -X .*/ --reverse --verbose compose-app/build/msix/ www/; bye"
-    - lftp -e "open sftp://connect2x.de; user $SSH_USER $RELEASE_SSH_PASSWORD; mirror -X .* -X .*/ --reverse --verbose compose-app/build/version/ www/; bye"
+    - ./gradlew
+      createGitLabRelease
+      createGitLabPagesFiles
+      --stacktrace
 
 pages:
   stage: website
   image: node:lts
   rules:
-    - if: $CI_MERGE_REQUEST_ID
-    - *if-release
+    - *if-main
   script:
     - cd website
     - npm install --force
     - npm run build
-    - mv ./dist ../public
+    - cp -r ./dist/* ../public
   artifacts:
     paths:
       - public

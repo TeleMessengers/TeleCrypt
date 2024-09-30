@@ -1,16 +1,21 @@
 import com.mikepenz.aboutlibraries.plugin.AboutLibrariesTask
+import org.gradle.nativeplatform.platform.internal.DefaultOperatingSystem
 import org.jetbrains.compose.desktop.application.dsl.TargetFormat
-import org.jetbrains.kotlin.cli.common.isWindows
 import org.jetbrains.kotlin.gradle.internal.ensureParentDirsCreated
+import org.jetbrains.kotlin.gradle.targets.js.dsl.ExperimentalDistributionDsl
 import org.jetbrains.kotlin.incremental.createDirectory
+import java.net.URI
+import java.net.http.HttpClient
+import java.net.http.HttpRequest
+import java.net.http.HttpResponse
+import java.nio.file.Path
 
 plugins {
-    // FIXME version file
-    kotlin("multiplatform") version "2.0.10"
-    id("com.android.application") version "8.5.2"
-    id("com.google.gms.google-services") version "4.4.2"
+    alias(libs.plugins.kotlin.multiplatform)
+    alias(libs.plugins.android.application)
     alias(libs.plugins.compose.multiplatform)
     alias(libs.plugins.compose.compiler)
+    alias(libs.plugins.google.services)
     alias(libs.plugins.aboutlibraries.plugin)
     alias(libs.plugins.download.plugin)
 }
@@ -24,9 +29,19 @@ repositories {
     mavenLocal()
 }
 
-val version = libs.versions.tammy.get()
-val appName = libs.versions.appName.get()
+group = "de.connect2x"
+version = withVersionSuffix(libs.versions.appVersion.get())
+val appVersion = libs.versions.appVersion.get()
+val appReleasedVersion = libs.versions.appReleasedVersion.get()
+val appName = "Tammy"
 val appNameCleaned = appName.replace("[-.\\s]".toRegex(), "").lowercase()
+
+val distributionDir: Provider<Directory> =
+    compose.desktop.nativeApplication.distributions.outputBaseDir.map { it.dir("main") }
+val appDistributionDir: Provider<Directory> = distributionDir.map { it.dir("app") }
+
+val os: DefaultOperatingSystem =
+    org.gradle.nativeplatform.platform.internal.DefaultNativePlatform.getCurrentOperatingSystem()
 
 enum class BuildFlavor { PROD, DEV }
 
@@ -69,6 +84,12 @@ val buildConfigGenerator by tasks.registering {
     dependsOn(licenses)
 }
 
+tasks.named("prepareKotlinIdeaImport") {
+    val prepareKotlinIdeaImport = this
+    kotlin.sourceSets.all {
+        prepareKotlinIdeaImport.dependsOn(kotlin)
+    }
+}
 
 kotlin {
     val kotlinJvmTarget = libs.versions.jvmTarget.get()
@@ -87,10 +108,13 @@ kotlin {
             webpackTask {
                 mainOutputFileName = "$appNameCleaned.js"
             }
+            @OptIn(ExperimentalDistributionDsl::class)
+            distribution {
+                outputDirectory.set(distributionDir.map { it.dir("web") })
+            }
         }
         binaries.executable()
     }
-
     sourceSets {
         all {
             languageSettings.optIn("kotlin.RequiresOptIn")
@@ -144,20 +168,24 @@ compose {
     desktop {
         application {
             mainClass = "de.connect2x.$appNameCleaned.desktop.MainKt"
-            jvmArgs(
-//            "-Dapple.awt.application.appearance=system",
-                "-Xmx1G",
-            )
+            jvmArgs("-Xmx2G")
 
             buildTypes.release.proguard {
                 isEnabled = false
             }
             nativeDistributions {
                 modules("java.net.http", "java.sql", "java.naming")
-                targetFormats(TargetFormat.Dmg, TargetFormat.Msi, TargetFormat.Deb)
+                targetFormats(
+                    TargetFormat.Exe,
+                    TargetFormat.Msi,
+                    TargetFormat.Dmg,
+                    TargetFormat.Pkg,
+                    TargetFormat.Deb,
+                    TargetFormat.Rpm,
+                )
                 appResourcesRootDir.set(layout.buildDirectory) // @see https://github.com/JetBrains/compose-jb/tree/master/tutorials/Native_distributions_and_local_execution#jvm-resource-loading
-                packageName = appNameCleaned
-                packageVersion = version
+                packageName = appName
+                packageVersion = appVersion
 
                 windows {
                     menu = true
@@ -182,10 +210,10 @@ android {
     defaultConfig {
         minSdk = libs.versions.androidMinimalSDK.get().toInt()
         targetSdk = libs.versions.androidTargetSDK.get().toInt()
-        versionCode = libs.versions.tammyVersionCode.get().toInt()
-        versionName = version
+        versionCode = libs.versions.appVersionCode.get().toInt()
+        versionName = appVersion
         applicationId = "de.connect2x.${appNameCleaned}"
-        setProperty("archivesBaseName", "${appNameCleaned}-${version}")
+        setProperty("archivesBaseName", "${appName}-${appVersion}")
         resValue("string", "app_name", appName)
         resValue("string", "scheme", appNameCleaned)
     }
@@ -213,8 +241,8 @@ android {
     buildTypes {
         release {
             signingConfig = signingConfigs.getByName("release")
-            isMinifyEnabled = false // FIXME
-            isShrinkResources = false // FIXME
+            isMinifyEnabled = false // TODO
+            isShrinkResources = false // TODO
             proguardFiles(
                 getDefaultProguardFile("proguard-android-optimize.txt"), "proguard-rules.pro"
             )
@@ -227,17 +255,389 @@ android {
         }
     }
 
-    flavorDimensions += "version"
-    productFlavors {
-        create(buildFlavor.name) {
-            when (buildFlavor) {
-                BuildFlavor.PROD -> {}
-                BuildFlavor.DEV -> {
+    when (buildFlavor) {
+        BuildFlavor.PROD -> {}
+        BuildFlavor.DEV -> {
+            flavorDimensions += "version"
+            productFlavors {
+                create(buildFlavor.name) {
                     dimension = "version"
                     applicationIdSuffix = ".dev"
                     versionNameSuffix = "-DEV"
                 }
             }
         }
+    }
+}
+
+class Distribution(
+    val type: String,
+    val platform: String,
+    vararg val tasks: String,
+) {
+    val fileName = "$appName-$platform-$appVersion.$type"
+    val fileNameReleased = "$appName-$platform-$appReleasedVersion.$type"
+    val fileNameWithoutVersion = "$appName-$platform.$type"
+}
+
+val distributions = listOf(
+    Distribution("aab", "Android", "bundleRelease"),
+    Distribution("deb", "Linux", "packageReleaseDeb"),
+    Distribution("rpm", "Linux", "packageReleaseRpm"),
+    Distribution("zip", "Linux", "createReleaseDistributable"),
+    Distribution("dmg", "Mac", "packageReleaseDmg"),
+    Distribution("pkg", "Mac", "packageReleasePkg"),
+    Distribution("zip", "Mac", "createReleaseDistributable"),
+    Distribution("exe", "Windows", "packageReleaseExe"),
+    Distribution("msi", "Windows", "packageReleaseMsi"),
+    Distribution("msix", "Windows", "packageReleaseMsix", "notarizeReleaseMsix"),
+    Distribution("zip", "Windows", "createReleaseDistributable"),
+    Distribution("zip", "Web", "packageReleaseWebZip"),
+)
+
+// #####################################################################################################################
+// mxix
+// #####################################################################################################################
+
+val appDescription = "Matrix Messenger Client"
+val appPackage = "de.connect2x.timmy"
+val msixFileName = "$appName-$appVersion.msix"
+val publisherName = "connect2x GmbH"
+val publisherCN = "CN=connect2x GmbH, O=connect2x GmbH, L=Dippoldiswalde, S=Saxony, C=DE"
+
+val urlSchema = "timmy"
+val logoFileName = "logo.png"
+val logo44FileName = "logo_44.png"
+val logo155FileName = "logo_155.png"
+
+fun String.toMsix() = split(".").map { it.toInt() }.let { (major, minor, patch) -> "$major.0.$minor.$patch" }
+
+val msixDistributionDir: Provider<Directory> =
+    distributionDir.map { it.dir("msix").also { it.asFile.createDirectory() } }
+
+val createMsixManifest by tasks.registering {
+    doLast {
+        appDistributionDir.get().dir(appName).file("AppxManifest.xml").asFile.apply {
+            createNewFile()
+            writeText(
+                """
+                <?xml version="1.0" encoding="utf-8"?>
+                <Package
+                  xmlns="http://schemas.microsoft.com/appx/manifest/foundation/windows10"
+                  xmlns:uap="http://schemas.microsoft.com/appx/manifest/uap/windows10"
+                  xmlns:desktop4="http://schemas.microsoft.com/appx/manifest/desktop/windows10/4"
+                  xmlns:uap10="http://schemas.microsoft.com/appx/manifest/uap/windows10/10"
+                  xmlns:rescap="http://schemas.microsoft.com/appx/manifest/foundation/windows10/restrictedcapabilities"
+                  IgnorableNamespaces="uap10 rescap">
+                  <Identity Name="$appPackage" Publisher="$publisherCN" Version="${appVersion.toMsix()}" ProcessorArchitecture="x64" />
+                  <Properties>
+                    <DisplayName>$appName</DisplayName>
+                    <PublisherDisplayName>$publisherName</PublisherDisplayName>
+                    <Description>$appDescription</Description>
+                    <Logo>$logoFileName</Logo>
+                    <uap10:PackageIntegrity>
+                      <uap10:Content Enforcement="on" />
+                    </uap10:PackageIntegrity>
+                  </Properties>
+                  <Resources>
+                    <Resource Language="de-de" />
+                  </Resources>
+                  <Dependencies>
+                    <TargetDeviceFamily Name="Windows.Desktop" MinVersion="10.0.17763.0" MaxVersionTested="10.0.22000.1" />
+                  </Dependencies>
+                  <Capabilities>
+                    <rescap:Capability Name="runFullTrust" />
+                  </Capabilities>
+                  <Applications>
+                    <Application
+                      Id="$appPackage"
+                      Executable="$appName.exe"
+                      EntryPoint="Windows.FullTrustApplication">
+                      <uap:VisualElements DisplayName="$appName" Description="$appDescription"	Square150x150Logo="$logo155FileName"
+                         Square44x44Logo="$logo44FileName" BackgroundColor="white" />
+                      <Extensions>
+                        <uap:Extension Category="windows.protocol">
+                          <uap:Protocol Name="$urlSchema" />
+                        </uap:Extension>
+                      </Extensions>
+                    </Application>
+                  </Applications>
+                </Package>
+                """.trimIndent()
+            )
+        }
+    }
+    dependsOn(tasks.getByName("createReleaseDistributable"))
+    onlyIf { os.isWindows }
+}
+
+val copyMsixLogos by tasks.registering(Copy::class) {
+    from(projectDir.resolve("src").resolve("desktopMain").resolve("resources")) {
+        include(logoFileName, logo44FileName, logo155FileName)
+    }
+    into(appDistributionDir.get().dir(appName).asFile)
+    dependsOn("createReleaseDistributable")
+    onlyIf { os.isWindows }
+}
+
+val packageReleaseMsix by tasks.registering(Exec::class) {
+    group = "compose desktop"
+    workingDir(msixDistributionDir)
+    executable = "makeappx.exe"
+    args(
+        "pack",
+        "/o", // always overwrite destination
+        "/d", appDistributionDir.get().dir(appName).asFile.absolutePath, // source
+        "/p", msixFileName, // destination
+    )
+    dependsOn("createReleaseDistributable", createMsixManifest, copyMsixLogos)
+    onlyIf { os.isWindows }
+}
+
+val notarizeReleaseMsix by tasks.registering(Exec::class) {
+    group = "compose desktop"
+    workingDir(msixDistributionDir)
+    executable = "signtool.exe"
+    args(
+        "sign",
+        "/debug",
+        "/fd", "sha256", // signature digest algorithm
+        "/tr", System.getenv("MSIX_CODE_SIGNING_TIMESTAMP_SERVER") ?: "", // timestamp server
+        "/td", "sha256", // timestamp digest algorithm
+        "/sha1", System.getenv("MSIX_CODE_SIGNING_THUMBPRINT") ?: "", // key selection
+        msixFileName
+    )
+    dependsOn(packageReleaseMsix)
+    onlyIf { os.isWindows }
+}
+
+// #####################################################################################################################
+// upload to package registry
+// #####################################################################################################################
+
+val projectUrl = "${System.getenv("CI_API_V4_URL")}/projects/${System.getenv("CI_PROJECT_ID")}"
+val packageRegistryUrl = "$projectUrl/packages/generic/build/$appVersion"
+
+fun uploadToPackageRegistry(filePath: Path, name: String) {
+    val httpClient = HttpClient.newHttpClient()
+    val request = HttpRequest.newBuilder()
+        .uri(URI.create("$packageRegistryUrl/$name"))
+        .header("Content-Type", "application/octet-stream")
+        .headers("JOB-TOKEN", System.getenv("CI_JOB_TOKEN"))
+        .PUT(HttpRequest.BodyPublishers.ofFile(filePath))
+        .build()
+    httpClient.send(request, HttpResponse.BodyHandlers.ofString())
+}
+
+fun uploadDistributableToPackageRegistry(distribution: Distribution) {
+    uploadToPackageRegistry(
+        distributionDir.get().file("${distribution.type}/${distribution.fileName}").asFile.toPath(),
+        distribution.fileName
+    )
+}
+
+val platformName: String = when {
+    os.isLinux -> "Linux"
+    os.isMacOsX -> "Mac"
+    os.isWindows -> "Windows"
+    else -> os.displayName
+}
+val platformZipDistribution = distributions.first { it.type == "zip" && it.platform == platformName }
+val zipDistributionDir = distributionDir.map { it.dir("zip").also { it.asFile.createDirectory() } }
+
+val packageReleasePlatformZip by tasks.creating(Zip::class) {
+    group = "compose desktop"
+    from(appDistributionDir)
+
+    archiveFileName = platformZipDistribution.fileName
+    destinationDirectory = zipDistributionDir
+    dependsOn(platformZipDistribution.tasks)
+}
+
+val uploadPlatformZipDistributable by tasks.registering {
+    group = "release"
+    doLast {
+        uploadToPackageRegistry(
+            zipDistributionDir.get().file(platformZipDistribution.fileName).asFile.toPath(),
+            platformZipDistribution.fileName
+        )
+    }
+    dependsOn(packageReleasePlatformZip)
+}
+
+val uploadAndroidDistributable by tasks.registering {
+    group = "release"
+    val thisDistribution = distributions.first { it.type == "aab" && it.platform == "Android" }
+    doLast {
+        uploadToPackageRegistry(
+            layout.buildDirectory.get().file("outputs/bundle/release/$appName-$appVersion-release.aab").asFile.toPath(),
+            thisDistribution.fileName
+        )
+    }
+    dependsOn(thisDistribution.tasks)
+}
+
+val uploadLinuxDistributable by tasks.registering {
+    group = "release"
+    val thisDistributions = distributions.filter { it.platform == "Linux" && it.type != "zip" }
+    doLast {
+        thisDistributions.forEach {
+            uploadDistributableToPackageRegistry(it)
+        }
+    }
+    dependsOn(
+        thisDistributions.flatMap { it.tasks.toList() }
+    )
+    onlyIf { os.isLinux }
+}
+
+val webZipDistribution = distributions.first { it.type == "zip" && it.platform == "Web" }
+
+val packageReleaseWebZip by tasks.creating(Zip::class) {
+    group = "compose desktop"
+    from(distributionDir.map { it.dir("web") })
+    archiveFileName = webZipDistribution.fileName
+    destinationDirectory = zipDistributionDir
+    dependsOn(webZipDistribution.tasks)
+}
+
+val uploadWebZipDistributable by tasks.registering {
+    group = "release"
+    doLast {
+        uploadToPackageRegistry(
+            zipDistributionDir.get().file(webZipDistribution.fileName).asFile.toPath(),
+            webZipDistribution.fileName
+        )
+    }
+    dependsOn(packageReleaseWebZip)
+}
+
+val uploadMacDistributable by tasks.registering {
+    group = "release"
+    val thisDistributions = distributions.filter { it.platform == "Mac" && it.type != "zip" }
+    doLast {
+        thisDistributions.forEach {
+            uploadDistributableToPackageRegistry(it)
+        }
+    }
+    dependsOn(
+        thisDistributions.flatMap { it.tasks.toList() }
+    )
+    onlyIf { os.isMacOsX }
+}
+
+val uploadWindowsDistributable by tasks.registering {
+    group = "release"
+    val thisDistributions = distributions.filter { it.platform == "Windows" && it.type != "zip" }
+    doLast {
+        thisDistributions.forEach {
+            uploadDistributableToPackageRegistry(it)
+        }
+    }
+    dependsOn(
+        thisDistributions.flatMap { it.tasks.toList() }
+    )
+    onlyIf { os.isWindows }
+}
+
+// #####################################################################################################################
+// release
+// #####################################################################################################################
+
+val publicDir = provider { layout.projectDirectory.asFile.resolve("public").also { it.createDirectory() } }
+
+fun getReleasedFileUrl(distribution: Distribution) =
+    "https://gitlab.com/connect2x/tammy/-/releases/$appReleasedVersion/downloads/${distribution.fileNameReleased}"
+
+val createGitLabPagesRedirects by tasks.registering {
+    doLast {
+        fun redirect(distribution: Distribution) =
+            "/${distribution.fileNameWithoutVersion} $packageRegistryUrl/${distribution.fileNameReleased} 302"
+
+        publicDir.get()
+            .resolve("_redirects")
+            .apply {
+                createNewFile()
+                writeText(distributions.joinToString("\r\n") { redirect(it) })
+            }
+    }
+}
+
+val createGitLabPagesMsixAppinstaller by tasks.registering {
+    doLast {
+        val msixBaseUrl = "https://tammy.connect2x.de"
+        val appinstallerFileName = "$appName.appinstaller"
+        val uri = getReleasedFileUrl(Distribution("msix", "Windows"))
+        publicDir.get()
+            .resolve(appinstallerFileName)
+            .apply {
+                createNewFile()
+                writeText(
+                    """
+                        <?xml version="1.0" encoding="utf-8"?>
+                        <AppInstaller
+                            xmlns="http://schemas.microsoft.com/appx/appinstaller/2018"
+                            Version="${appReleasedVersion.toMsix()}"
+                            Uri="$msixBaseUrl/$appinstallerFileName">
+                            <MainPackage
+                                Name="$appPackage"
+                                Publisher="$publisherCN"
+                                Version="${appReleasedVersion.toMsix()}"
+                                ProcessorArchitecture="x64"
+                                Uri="$uri" />
+                            <UpdateSettings>
+                                <OnLaunch 
+                                    HoursBetweenUpdateChecks="12"
+                                    UpdateBlocksActivation="true"
+                                    ShowPrompt="true" />
+                                <ForceUpdateFromAnyVersion>false</ForceUpdateFromAnyVersion>
+                                <AutomaticBackgroundTask />
+                            </UpdateSettings>
+                        </AppInstaller>
+                """.trimIndent()
+                )
+            }
+    }
+}
+
+val createGitLabPagesFiles by tasks.registering {
+    group = "release"
+    dependsOn(createGitLabPagesRedirects, createGitLabPagesMsixAppinstaller)
+}
+
+val createGitLabRelease by tasks.registering {
+    group = "release"
+    doLast {
+        fun assetsLinkJson(distribution: Distribution) =
+            """
+                {
+                    "name": "${distribution.fileName}",
+                    "url": "$packageRegistryUrl/${distribution.fileName}"
+                }
+            """.trimIndent()
+
+
+        val httpClient = HttpClient.newHttpClient()
+        val request = HttpRequest.newBuilder()
+            .uri(URI.create("$projectUrl/releases"))
+            .header("Content-Type", "application/json")
+            .headers("JOB-TOKEN", System.getenv("CI_JOB_TOKEN"))
+            .POST(
+                HttpRequest.BodyPublishers.ofString(
+                    """
+                        {
+                            "name": "$appVersion",
+                            "tag_name": "v$appVersion",
+                            "assets": {
+                                "links": [
+                                    ${distributions.joinToString(",") { assetsLinkJson(it) }}
+                                ]
+                            }
+                        }
+                    """.trimIndent()
+                )
+            )
+            .build()
+        httpClient.send(request, HttpResponse.BodyHandlers.ofString())
     }
 }

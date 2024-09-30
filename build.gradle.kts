@@ -389,7 +389,7 @@ val createMsixManifest by tasks.registering {
             )
         }
     }
-    dependsOn(misxDistribution.tasks)
+    dependsOn("createReleaseDistributable")
     onlyIf { os.isWindows }
 }
 
@@ -398,7 +398,7 @@ val copyMsixLogos by tasks.registering(Copy::class) {
         include(logoFileName, logo44FileName, logo155FileName)
     }
     into(appDistributionDir.get().dir(appName).asFile)
-    dependsOn(misxDistribution.tasks)
+    dependsOn("createReleaseDistributable")
     onlyIf { os.isWindows }
 }
 
@@ -412,7 +412,7 @@ val packageReleaseMsix by tasks.registering(Exec::class) {
         "/d", appDistributionDir.get().dir(appName).asFile.absolutePath, // source
         "/p", misxDistribution.originalFileName, // destination
     )
-    dependsOn(misxDistribution.tasks, createMsixManifest, copyMsixLogos)
+    dependsOn("createReleaseDistributable", createMsixManifest, copyMsixLogos)
     onlyIf { os.isWindows }
 }
 

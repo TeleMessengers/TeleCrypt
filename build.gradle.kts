@@ -60,7 +60,6 @@ val buildConfigGenerator by tasks.registering {
     val outputFile = generatedSrc.get()
         .dir("de/connect2x/$appNameCleaned")
         .file("BuildConfig.kt")
-    outputFile.asFile.ensureParentDirsCreated()
     doLast {
         val licencesString = licencesFile.readText()
         val quotes = "\"\"\""
@@ -78,7 +77,11 @@ val buildConfigGenerator by tasks.registering {
             
             enum class Flavor { PROD, DEV }
         """.trimIndent()
-        outputFile.asFile.writeText(buildConfigString)
+        outputFile.asFile.apply {
+            ensureParentDirsCreated()
+            createNewFile()
+            writeText(buildConfigString)
+        }
     }
     outputs.dirs(generatedSrc)
     dependsOn(licenses)

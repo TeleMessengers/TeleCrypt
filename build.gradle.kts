@@ -29,12 +29,14 @@ repositories {
     mavenLocal()
 }
 
-group = "de.connect2x"
-version = withVersionSuffix(libs.versions.appVersion.get())
-val appVersion = libs.versions.appVersion.get()
+val rawAppVersion = libs.versions.appVersion.get()
+val appVersion = withVersionSuffix(rawAppVersion)
 val appReleasedVersion = libs.versions.appReleasedVersion.get()
 val appName = "Tammy"
 val appNameCleaned = appName.replace("[-.\\s]".toRegex(), "").lowercase()
+
+group = "de.connect2x"
+version = appVersion
 
 val distributionDir: Provider<Directory> =
     compose.desktop.nativeApplication.distributions.outputBaseDir.map { it.dir("main-release") }
@@ -188,14 +190,15 @@ compose {
                 )
                 appResourcesRootDir.set(layout.buildDirectory) // @see https://github.com/JetBrains/compose-jb/tree/master/tutorials/Native_distributions_and_local_execution#jvm-resource-loading
                 packageName = appName
-                packageVersion = appVersion
+                packageVersion = rawAppVersion
+                licenseFile.set(project.file("LICENSE"))
 
                 windows {
                     menu = true
                     iconFile.set(project.file("src/desktopMain/resources/logo.ico"))
+                    upgradeUuid = "8d41e87a-4f88-41a3-bad9-9d4e8279b7e9"
                 }
                 macOS {
-                    dockName = appName
                     iconFile.set(project.file("src/desktopMain/resources/logo.icns"))
                 }
             }
@@ -279,7 +282,7 @@ class Distribution(
     vararg val tasks: String,
 ) {
     val fileName = "$appName-$platform-$appVersion.$type"
-    val fileNameWithoutPlatform = "$appName-$appVersion.$type"
+    val originalFileName = "$appName-$rawAppVersion.$type"
     val fileNameReleased = "$appName-$platform-$appReleasedVersion.$type"
     val fileNameWithoutVersion = "$appName-$platform.$type"
 }
@@ -309,7 +312,6 @@ val msixFileName = "$appName-$appVersion.msix"
 val publisherName = "connect2x GmbH"
 val publisherCN = "CN=connect2x GmbH, O=connect2x GmbH, L=Dippoldiswalde, S=Saxony, C=DE"
 
-val urlSchema = "timmy"
 val logoFileName = "logo.png"
 val logo44FileName = "logo_44.png"
 val logo155FileName = "logo_155.png"
@@ -333,7 +335,7 @@ val createMsixManifest by tasks.registering {
                   xmlns:uap10="http://schemas.microsoft.com/appx/manifest/uap/windows10/10"
                   xmlns:rescap="http://schemas.microsoft.com/appx/manifest/foundation/windows10/restrictedcapabilities"
                   IgnorableNamespaces="uap10 rescap">
-                  <Identity Name="$appPackage" Publisher="$publisherCN" Version="${appVersion.toMsix()}" ProcessorArchitecture="x64" />
+                  <Identity Name="$appPackage" Publisher="$publisherCN" Version="${rawAppVersion.toMsix()}" ProcessorArchitecture="x64" />
                   <Properties>
                     <DisplayName>$appName</DisplayName>
                     <PublisherDisplayName>$publisherName</PublisherDisplayName>
@@ -361,7 +363,7 @@ val createMsixManifest by tasks.registering {
                          Square44x44Logo="$logo44FileName" BackgroundColor="white" />
                       <Extensions>
                         <uap:Extension Category="windows.protocol">
-                          <uap:Protocol Name="$urlSchema" />
+                          <uap:Protocol Name="$appNameCleaned" />
                         </uap:Extension>
                       </Extensions>
                     </Application>
@@ -420,12 +422,12 @@ val notarizeReleaseMsix by tasks.registering(Exec::class) {
 // #####################################################################################################################
 
 val projectUrl = "${System.getenv("CI_API_V4_URL")}/projects/${System.getenv("CI_PROJECT_ID")}"
-val packageRegistryUrl = "$projectUrl/packages/generic/build/$appVersion"
+val packageRegistryUrl = "$projectUrl/packages/generic"
 
-fun uploadToPackageRegistry(filePath: Path, name: String) {
+fun uploadToPackageRegistry(filePath: Path, packageName: String, fileName: String) {
     val httpClient = HttpClient.newHttpClient()
     val request = HttpRequest.newBuilder()
-        .uri(URI.create("$packageRegistryUrl/$name"))
+        .uri(URI.create("$packageRegistryUrl/$packageName/$appVersion/$fileName"))
         .header("Content-Type", "application/octet-stream")
         .headers("JOB-TOKEN", System.getenv("CI_JOB_TOKEN"))
         .PUT(HttpRequest.BodyPublishers.ofFile(filePath))
@@ -435,7 +437,8 @@ fun uploadToPackageRegistry(filePath: Path, name: String) {
 
 fun uploadDistributableToPackageRegistry(distribution: Distribution) {
     uploadToPackageRegistry(
-        distributionDir.get().file("${distribution.type}/${distribution.fileNameWithoutPlatform}").asFile.toPath(),
+        distributionDir.get().file("${distribution.type}/${distribution.originalFileName}").asFile.toPath(),
+        distribution.fileNameWithoutVersion,
         distribution.fileName
     )
 }
@@ -453,7 +456,7 @@ val packageReleasePlatformZip by tasks.creating(Zip::class) {
     group = "compose desktop"
     from(appDistributionDir)
 
-    archiveFileName = platformZipDistribution.fileName
+    archiveFileName = platformZipDistribution.originalFileName
     destinationDirectory = zipDistributionDir
     dependsOn(platformZipDistribution.tasks, copyMsixLogos) // copyMsixLogos because of implicit dependency
 }
@@ -461,10 +464,7 @@ val packageReleasePlatformZip by tasks.creating(Zip::class) {
 val uploadPlatformZipDistributable by tasks.registering {
     group = "release"
     doLast {
-        uploadToPackageRegistry(
-            zipDistributionDir.get().file(platformZipDistribution.fileName).asFile.toPath(),
-            platformZipDistribution.fileName
-        )
+        uploadDistributableToPackageRegistry(platformZipDistribution)
     }
     dependsOn(packageReleasePlatformZip)
 }
@@ -474,7 +474,9 @@ val uploadAndroidDistributable by tasks.registering {
     val thisDistribution = distributions.first { it.type == "aab" && it.platform == "Android" }
     doLast {
         uploadToPackageRegistry(
-            layout.buildDirectory.get().file("outputs/bundle/release/$appName-$appVersion-release.aab").asFile.toPath(),
+            layout.buildDirectory.get()
+                .file("outputs/bundle/release/$appName-$rawAppVersion-release.aab").asFile.toPath(),
+            thisDistribution.fileNameWithoutVersion,
             thisDistribution.fileName
         )
     }
@@ -500,7 +502,7 @@ val webZipDistribution = distributions.first { it.type == "zip" && it.platform =
 val packageReleaseWebZip by tasks.creating(Zip::class) {
     group = "compose desktop"
     from(distributionDir.map { it.dir("web") })
-    archiveFileName = webZipDistribution.fileName
+    archiveFileName = webZipDistribution.originalFileName
     destinationDirectory = zipDistributionDir
     dependsOn(webZipDistribution.tasks)
 }
@@ -508,10 +510,7 @@ val packageReleaseWebZip by tasks.creating(Zip::class) {
 val uploadWebZipDistributable by tasks.registering {
     group = "release"
     doLast {
-        uploadToPackageRegistry(
-            zipDistributionDir.get().file(webZipDistribution.fileName).asFile.toPath(),
-            webZipDistribution.fileName
-        )
+        uploadDistributableToPackageRegistry(webZipDistribution)
     }
     dependsOn(packageReleaseWebZip)
 }

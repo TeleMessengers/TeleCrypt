@@ -200,6 +200,21 @@ compose {
                 }
                 macOS {
                     iconFile.set(project.file("src/desktopMain/resources/logo.icns"))
+                    infoPlist {
+                        extraKeysRawXml = """
+                            <key>CFBundleURLTypes</key>
+                              <array>
+                                <dict>
+                                  <key>CFBundleURLName</key>
+                                  <string>$appName</string>
+                                  <key>CFBundleURLSchemes</key>
+                                  <array>
+                                    <string>$appNameCleaned</string>
+                                  </array>
+                                </dict>
+                              </array>
+                        """.trimIndent()
+                    }
                 }
             }
         }

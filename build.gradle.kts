@@ -172,12 +172,11 @@ composeCompiler {
 compose {
     desktop {
         application {
-            from(kotlin.targets["desktop"])
             mainClass = "de.connect2x.$appNameCleaned.desktop.MainKt"
             jvmArgs("-Xmx2G")
 
             buildTypes.release.proguard {
-                isEnabled = false
+                isEnabled = false // TODO
             }
             nativeDistributions {
                 modules("java.net.http", "java.sql", "java.naming")

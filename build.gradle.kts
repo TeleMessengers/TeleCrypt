@@ -279,6 +279,7 @@ class Distribution(
     vararg val tasks: String,
 ) {
     val fileName = "$appName-$platform-$appVersion.$type"
+    val fileNameWithoutPlatform = "$appName-$appVersion.$type"
     val fileNameReleased = "$appName-$platform-$appReleasedVersion.$type"
     val fileNameWithoutVersion = "$appName-$platform.$type"
 }
@@ -434,7 +435,7 @@ fun uploadToPackageRegistry(filePath: Path, name: String) {
 
 fun uploadDistributableToPackageRegistry(distribution: Distribution) {
     uploadToPackageRegistry(
-        distributionDir.get().file("${distribution.type}/${distribution.fileName}").asFile.toPath(),
+        distributionDir.get().file("${distribution.type}/${distribution.fileNameWithoutPlatform}").asFile.toPath(),
         distribution.fileName
     )
 }

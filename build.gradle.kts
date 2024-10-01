@@ -516,7 +516,7 @@ val packageReleasePlatformZip by tasks.creating(Zip::class) {
 
     archiveFileName = platformZipDistribution.originalFileName
     destinationDirectory = zipDistributionDir
-    dependsOn(platformZipDistribution.tasks, copyMsixLogos) // copyMsixLogos because of implicit dependency
+    dependsOn.addAll(platformZipDistribution.tasks + copyMsixLogos)// copyMsixLogos because of implicit dependency
 }
 
 val uploadPlatformZipDistributable by tasks.registering {
@@ -531,9 +531,14 @@ val uploadAndroidDistributable by tasks.registering {
     group = "release"
     val thisDistribution = distributions.first { it.type == "aab" && it.platform == "Android" }
     doLast {
-        uploadDistributableToPackageRegistry(thisDistribution)
+        uploadToPackageRegistry(
+            layout.buildDirectory.get()
+                .file("outputs/bundle/release/$appName-$rawAppVersion-release.aab").asFile.toPath(),
+            thisDistribution.fileNameWithoutVersion,
+            thisDistribution.fileName
+        )
     }
-    dependsOn(thisDistribution.tasks)
+    dependsOn.addAll(thisDistribution.tasks)
 }
 
 val uploadLinuxDistributable by tasks.registering {
@@ -544,9 +549,7 @@ val uploadLinuxDistributable by tasks.registering {
             uploadDistributableToPackageRegistry(it)
         }
     }
-    dependsOn(
-        thisDistributions.flatMap { it.tasks.toList() }
-    )
+    dependsOn.addAll(thisDistributions.flatMap { it.tasks.toList() })
     onlyIf { os.isLinux }
 }
 
@@ -557,7 +560,7 @@ val packageReleaseWebZip by tasks.creating(Zip::class) {
     from(distributionDir.map { it.dir("web") })
     archiveFileName = webZipDistribution.originalFileName
     destinationDirectory = zipDistributionDir
-    dependsOn(webZipDistribution.tasks)
+    dependsOn.addAll(webZipDistribution.tasks)
 }
 
 val uploadWebZipDistributable by tasks.registering {
@@ -576,9 +579,7 @@ val uploadMacDistributable by tasks.registering {
             uploadDistributableToPackageRegistry(it)
         }
     }
-    dependsOn(
-        thisDistributions.flatMap { it.tasks.toList() }
-    )
+    dependsOn.addAll(thisDistributions.flatMap { it.tasks.toList() })
     onlyIf { os.isMacOsX }
 }
 
@@ -590,9 +591,7 @@ val uploadWindowsDistributable by tasks.registering {
             uploadDistributableToPackageRegistry(it)
         }
     }
-    dependsOn(
-        thisDistributions.flatMap { it.tasks.toList() }
-    )
+    dependsOn.addAll(thisDistributions.flatMap { it.tasks.toList() })
     onlyIf { os.isWindows }
 }
 

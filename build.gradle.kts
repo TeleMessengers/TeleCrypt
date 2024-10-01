@@ -304,7 +304,7 @@ class Distribution(
 
 val distributions = listOf(
     Distribution("aab", "Android", listOf("bundleRelease"), "$appName-$rawAppVersion-release.aab"),
-    Distribution("deb", "Linux", listOf("packageReleaseDeb"), "${appNameCleaned}_${rawAppVersion}_amd64.deb "),
+    Distribution("deb", "Linux", listOf("packageReleaseDeb"), "${appNameCleaned}_${rawAppVersion}_amd64.deb"),
     Distribution("rpm", "Linux", listOf("packageReleaseRpm"), "$appNameCleaned-$rawAppVersion-1.x86_64.rpm"),
     Distribution("zip", "Linux", listOf("createReleaseDistributable")),
     Distribution("dmg", "Mac", listOf("packageReleaseDmg")),

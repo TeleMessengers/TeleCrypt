@@ -40,7 +40,7 @@ version = appVersion
 
 val distributionDir: Provider<Directory> =
     compose.desktop.nativeApplication.distributions.outputBaseDir.map { it.dir("main-release") }
-val appDistributionDir: Provider<Directory> = distributionDir.map { it.dir("app/$appName") }
+val appDistributionDir: Provider<Directory> = distributionDir.map { it.dir("app") }
 
 val os: DefaultOperatingSystem =
     org.gradle.nativeplatform.platform.internal.DefaultNativePlatform.getCurrentOperatingSystem()
@@ -380,7 +380,7 @@ val msixDistributionDir: Provider<Directory> =
 
 val createMsixManifest by tasks.registering {
     doLast {
-        appDistributionDir.get().file("AppxManifest.xml").asFile.apply {
+        appDistributionDir.get().dir(appName).file("AppxManifest.xml").asFile.apply {
             createNewFile()
             writeText(
                 """
@@ -438,7 +438,7 @@ val copyMsixLogos by tasks.registering(Copy::class) {
     from(projectDir.resolve("src").resolve("desktopMain").resolve("resources")) {
         include(logoFileName, logo44FileName, logo155FileName)
     }
-    into(appDistributionDir.get().asFile)
+    into(appDistributionDir.get().dir(appName).asFile)
     dependsOn("createReleaseDistributable")
     onlyIf { os.isWindows }
 }
@@ -450,7 +450,7 @@ val packageReleaseMsix by tasks.registering(Exec::class) {
     args(
         "pack",
         "/o", // always overwrite destination
-        "/d", appDistributionDir.get().asFile.absolutePath, // source
+        "/d", appDistributionDir.get().dir(appName).asFile.absolutePath, // source
         "/p", misxDistribution.originalFileName, // destination
     )
     dependsOn("createReleaseDistributable", createMsixManifest, copyMsixLogos)

@@ -10,7 +10,9 @@ import de.connect2x.trixnity.messenger.platformMatrixMessengerSettingsHolderModu
 import de.connect2x.trixnity.messenger.util.RootPath
 import org.koin.dsl.module
 
-fun tammyConfiguration(): MatrixMultiMessengerConfiguration.() -> Unit = {
+fun tammyConfiguration(
+    customConfig: MatrixMultiMessengerConfiguration.() -> Unit = {},
+): MatrixMultiMessengerConfiguration.() -> Unit = {
     appName = BuildConfig.appName
     packageName = "de.connect2x"
     licenses = BuildConfig.licenses
@@ -55,6 +57,7 @@ fun tammyConfiguration(): MatrixMultiMessengerConfiguration.() -> Unit = {
             }
         }
     }
+    customConfig()
 }
 
 internal expect fun getDevRootPath(): RootPath?

@@ -150,7 +150,7 @@ release:
       createGitLabRelease
       --stacktrace
 
-distribution-links:
+pages:
   stage: website
   tags: [ "saas-linux-small-amd64" ]
   image: $BUILD_LINUX_IMAGE_NAME
@@ -159,26 +159,9 @@ distribution-links:
   rules:
     - *if-main
   artifacts:
-    name: pages
-    when: on_success
     paths:
       - "public/"
   script:
     - ./gradlew
       createGitLabPagesFiles
       --stacktrace
-
-pages:
-  stage: website
-  image: node:lts
-  rules:
-    - *if-main
-  needs: [ "distribution-links" ]
-  script:
-    - cd website
-    - npm install --force
-    - npm run build
-    - cp -r ./dist/* ../public
-  artifacts:
-    paths:
-      - public

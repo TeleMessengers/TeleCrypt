@@ -7,10 +7,10 @@ workflow:
     - if: $CI_PIPELINE_SOURCE == "schedule"
 
 stages:
-  #- changelog
-  #- binaries
+  - changelog
+  - binaries
   - release
-  #- website
+  - website
 
 variables:
   GRADLE_OPTS: -Dorg.gradle.daemon=false

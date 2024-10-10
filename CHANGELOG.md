@@ -9,10 +9,6 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Added
 
-- Landing Page with Imprint
-- White labelled client for Trixnity Messenger Compose UI
-- renamed ENV variable `BUILD_CONFIG` to `TAMMY_BUILD_CONFIG` to avoid confusion with white-labelled clients
-
 ### Changed
 
 ### Deprecated
@@ -20,8 +16,5 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ### Removed
 
 ### Fixed
-
-- Licenses not loaded
-- Fix broken Android manifest referencing non-existant broadcast receiver
 
 ### Security

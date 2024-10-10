@@ -36,7 +36,7 @@ wait_for_emulator() {
         fi
         let "r = sec % 5"
         if [[ $r -eq 0 ]]; then
-            echo "Waiting for emulator on port ${adb_port} to start: $(explain "$out")"
+            echo "Waiting for emulator on port ${adb_port} to start: $out"
         fi
         sleep 1
         let "sec++"

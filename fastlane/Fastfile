@@ -17,9 +17,6 @@ default_platform(:android)
 
 platform :android do
     lane :screenshots do
-        gradle(
-            task: 'clean'
-        )
         build_android_app(
             task: 'assemble',
             build_type: 'Debug'

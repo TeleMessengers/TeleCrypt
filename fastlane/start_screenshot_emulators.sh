@@ -13,6 +13,18 @@ emulator -avd Nexus_5 -port 5554 -no-window -no-audio -no-accel >> emulator_logs
 emulator -avd Nexus_7 -port 5556 -no-window -no-audio -no-accel >> emulator_logs/nexus_7.log 2>&1 &
 emulator -avd Nexus_10 -port 5558 -no-window -no-audio -no-accel -prop persist.sys.orientation=landscape >> emulator_logs/nexus_10.log 2>&1 &
 
+explain() {
+	if [[ "$1" =~ "not found" ]]; then
+		printf "device not found"
+	elif [[ "$1" =~ "offline" ]]; then
+		printf "device offline"
+	elif [[ "$1" =~ "running" ]]; then
+		printf "booting"
+	else
+		printf "$1"
+	fi
+}
+
 wait_for_emulator() {
     local adb_port=$1
     local sec=0
@@ -36,7 +48,7 @@ wait_for_emulator() {
         fi
         let "r = sec % 5"
         if [[ $r -eq 0 ]]; then
-            echo "Waiting for emulator on port ${adb_port} to start: $out"
+            echo "Waiting for emulator on port ${adb_port} to start: $(explain "$out")"
         fi
         sleep 1
         let "sec++"

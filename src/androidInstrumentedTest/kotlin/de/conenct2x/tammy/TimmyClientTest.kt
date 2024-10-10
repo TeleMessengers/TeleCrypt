@@ -31,8 +31,7 @@ import de.connect2x.trixnity.messenger.util.RootPath
 import de.connect2x.trixnity.messenger.viewmodel.AccountInfo
 import de.connect2x.trixnity.messenger.viewmodel.MainViewModel
 import de.connect2x.trixnity.messenger.viewmodel.UserInfoElement
-import de.connect2x.trixnity.messenger.viewmodel.files.ImageRouter
-import de.connect2x.trixnity.messenger.viewmodel.files.VideoRouter
+import de.connect2x.trixnity.messenger.viewmodel.files.MediaRouter
 import de.connect2x.trixnity.messenger.viewmodel.initialsync.InitialSyncRouter
 import de.connect2x.trixnity.messenger.viewmodel.room.RoomRouter
 import de.connect2x.trixnity.messenger.viewmodel.room.RoomViewModel
@@ -215,10 +214,8 @@ class MockMainViewModel : MainViewModel {
         MutableValue(ChildStack(SelfVerificationRouter.Config.None, SelfVerificationRouter.Wrapper.None))
     override val deviceVerificationRouterStack: Value<ChildStack<VerificationRouter.Config, VerificationRouter.Wrapper>> =
         MutableValue(ChildStack(VerificationRouter.Config.None, VerificationRouter.Wrapper.None))
-    override val imageRouterStack: Value<ChildStack<ImageRouter.Config, ImageRouter.Wrapper>> =
-        MutableValue(ChildStack(ImageRouter.Config.None, ImageRouter.Wrapper.None))
-    override val videoRouterStack: Value<ChildStack<VideoRouter.Config, VideoRouter.Wrapper>> =
-        MutableValue(ChildStack(VideoRouter.Config.None, VideoRouter.Wrapper.None))
+    override val mediaRouterStack: Value<ChildStack<MediaRouter.Config, MediaRouter.Wrapper>> =
+        MutableValue(ChildStack(MediaRouter.Config.None, MediaRouter.Wrapper.None))
     override val initialSyncStack: Value<ChildStack<InitialSyncRouter.Config, InitialSyncRouter.Wrapper>> =
         MutableValue(ChildStack(InitialSyncRouter.Config.None, InitialSyncRouter.Wrapper.None))
 
@@ -657,7 +654,7 @@ class ImageMessageViewModelMock(
     override val downloadSuccessful: StateFlow<Boolean?> = MutableStateFlow(true)
     override val fileMimeType: String? = null
     override val fileName: String = "image"
-    override val fileSize: Int? = null
+    override val fileSize: Long? = null
     override val formattedDate: String = ""
     override val invitation: StateFlow<String?> = MutableStateFlow(null)
     override val saveFileDialogOpen: StateFlow<Boolean> = MutableStateFlow(false)

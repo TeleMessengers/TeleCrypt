@@ -12,3 +12,41 @@ mkdir "emulator_logs"
 emulator -avd Nexus_5 -port 5554 -no-window -no-audio -no-accel >> emulator_logs/nexus_5.log 2>&1 &
 emulator -avd Nexus_7 -port 5556 -no-window -no-audio -no-accel >> emulator_logs/nexus_7.log 2>&1 &
 emulator -avd Nexus_10 -port 5558 -no-window -no-audio -no-accel -prop persist.sys.orientation=landscape >> emulator_logs/nexus_10.log 2>&1 &
+
+wait_for_emulator() {
+    local adb_port=$1
+    local sec=0
+
+    adb -s "emulator-${adb_port}" wait-for-device
+    adb -s "emulator-${adb_port}" devices
+
+    while true; do
+        if [[ $sec -ge $TIMEOUT ]]; then
+            echo "Timeout (${TIMEOUT} seconds) reached - Failed to start emulator on port ${adb_port}"
+            exit 1
+        fi
+        out=$(adb -s "emulator-${adb_port}" shell getprop init.svc.bootanim 2>&1 | grep -v '^\*')
+        if [[ "$out" =~ "command not found" ]]; then
+            echo "$out"
+            exit 1
+        fi
+        if [ "$(adb -s "emulator-${adb_port}" shell getprop sys.boot_completed | tr -d '\r')" = "1" ]; then
+            break
+        fi
+        let "r = sec % 5"
+        if [[ $r -eq 0 ]]; then
+            echo "Waiting for emulator on port ${adb_port} to start: $(explain "$out")"
+        fi
+        sleep 1
+        let "sec++"
+    done
+    echo "Emulator on port ${adb_port} is ready (took ${sec} seconds)"
+}
+
+echo "wait for emulators to fully start"
+wait_for_emulator 5554 &
+wait_for_emulator 5556 &
+wait_for_emulator 5558 &
+
+wait
+echo "All emulators are ready."

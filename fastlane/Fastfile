@@ -58,6 +58,7 @@ platform :android do
         upload_to_play_store(
             track: 'beta',
             skip_upload_apk: true,
+            aab: "build/outputs/bundle/release/Tammy-release.aab"
             version_code: ENV['CI_PIPELINE_IID']
         )
     end
@@ -65,6 +66,7 @@ platform :android do
     lane :release do
         upload_to_play_store(
             skip_upload_apk: true,
+            aab: "build/outputs/bundle/release/Tammy-release.aab",
             version_code: ENV['CI_PIPELINE_IID']
         )
     end

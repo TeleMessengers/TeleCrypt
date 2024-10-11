@@ -57,13 +57,15 @@ platform :android do
     lane :releaseBeta do
         upload_to_play_store(
             track: 'beta',
-            skip_upload_apk: true
+            skip_upload_apk: true,
+            version_code: ENV['CI_PIPELINE_IID']
         )
     end
 
     lane :release do
         upload_to_play_store(
-            skip_upload_apk: true
+            skip_upload_apk: true,
+            version_code: ENV['CI_PIPELINE_IID']
         )
     end
 end

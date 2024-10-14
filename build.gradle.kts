@@ -664,7 +664,7 @@ val createGitLabPagesRedirects by tasks.registering {
 
 val createGitLabPagesMsixAppinstaller by tasks.registering {
     doLast {
-        val msixBaseUrl = "https://tammy.connect2x.de"
+        val msixBaseUrl = "https://app.tammy.connect2x.de/"
         val appinstallerFileName = "$appName.appinstaller"
         val uri = getReleasedFileUrl(Distribution("msix", "Windows", listOf()))
         publicDir.get()

@@ -705,9 +705,19 @@ val createGitLabPagesWebApp by tasks.registering(Copy::class) {
     dependsOn(webZipDistribution.tasks)
 }
 
+val createGitLabPagesFastlaneMetadata by tasks.registering(Copy::class) {
+    from(layout.projectDirectory.dir("fastlane").dir("metadata"))
+    into(publicDir.map { it.resolve("fastlane").resolve("metadata").also { it.createDirectory() } })
+}
+
 val createGitLabPagesFiles by tasks.registering {
     group = "release"
-    dependsOn(createGitLabPagesRedirects, createGitLabPagesMsixAppinstaller, createGitLabPagesWebApp)
+    dependsOn(
+        createGitLabPagesRedirects,
+        createGitLabPagesMsixAppinstaller,
+        createGitLabPagesWebApp,
+        createGitLabPagesFastlaneMetadata
+    )
 }
 
 val createGitLabRelease by tasks.registering {

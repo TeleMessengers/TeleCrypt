@@ -1,5 +1,7 @@
 # Tammy
 
+Website: https://tammy.connect2x.de
+
 White label messenger based on [Trixnity Messenger](https://gitlab.com/connect2x/trixnity-messenger/trixnity-messenger).
 Please consult the Readme there for additional information.
 

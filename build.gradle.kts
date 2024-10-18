@@ -228,6 +228,7 @@ compose {
                             sign = true
                             keychain = "apple_keychain.keychain"
                             identity = System.getenv("APPLE_KEYCHAIN_IDENTITY")
+                            prefix = ""
                         }
                         notarization {
                             teamID = System.getenv("APPLE_TEAM_ID")

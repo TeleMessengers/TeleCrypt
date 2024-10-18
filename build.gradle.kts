@@ -637,32 +637,27 @@ val publicDir = provider { layout.projectDirectory.asFile.resolve("public").also
 fun getReleasedFileUrl(distribution: Distribution) =
     "https://gitlab.com/connect2x/tammy/-/releases/$appVersion/downloads/${distribution.fileName}"
 
-val createGitLabPagesRedirects by tasks.registering {
+val createWebsiteRedirects by tasks.registering {
     doLast {
         fun redirect(distribution: Distribution) =
-            "/${distribution.fileNameWithoutVersion} ${
+            "rewrite /${distribution.fileNameWithoutVersion} ${
                 packageRegistryUrl(
                     distribution.fileNameWithoutVersion,
                     appVersion,
                     distribution.fileName
                 )
-            } 302"
+            } permanent;"
 
         publicDir.get()
-            .resolve("_redirects")
+            .resolve("redirects.conf")
             .apply {
                 createNewFile()
-                writeText(
-                    """
-                    ${distributions.joinToString("\r\n") { redirect(it) }}
-                    
-                """.trimIndent()
-                )
+                writeText(distributions.joinToString("\r\n") { redirect(it) })
             }
     }
 }
 
-val createGitLabPagesMsixAppinstaller by tasks.registering {
+val createWebsiteMsixAppinstaller by tasks.registering {
     doLast {
         val msixBaseUrl = "https://app.tammy.connect2x.de/"
         val appinstallerFileName = "$appName-Windows.appinstaller"
@@ -699,24 +694,24 @@ val createGitLabPagesMsixAppinstaller by tasks.registering {
     }
 }
 
-val createGitLabPagesWebApp by tasks.registering(Copy::class) {
+val createWebsiteWebApp by tasks.registering(Copy::class) {
     from(distributionDir.map { it.dir("web") })
     into(publicDir)
     dependsOn(webZipDistribution.tasks)
 }
 
-val createGitLabPagesFastlaneMetadata by tasks.registering(Copy::class) {
+val createWebsiteFastlaneMetadata by tasks.registering(Copy::class) {
     from(layout.projectDirectory.dir("fastlane").dir("metadata"))
     into(publicDir.map { it.resolve("fastlane").resolve("metadata").also { it.createDirectory() } })
 }
 
-val createGitLabPagesFiles by tasks.registering {
+val createWebsite by tasks.registering {
     group = "release"
     dependsOn(
-        createGitLabPagesRedirects,
-        createGitLabPagesMsixAppinstaller,
-        createGitLabPagesWebApp,
-        createGitLabPagesFastlaneMetadata
+        createWebsiteRedirects,
+        createWebsiteMsixAppinstaller,
+        createWebsiteWebApp,
+        createWebsiteFastlaneMetadata
     )
 }
 

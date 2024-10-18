@@ -221,9 +221,9 @@ compose {
                     upgradeUuid = "8d41e87a-4f88-41a3-bad9-9d4e8279b7e9"
                 }
                 macOS {
-                    bundleID = "de.connect2x.tammy"
                     val appleKeychainFile = file("apple_keychain.keychain")
                     if (appleKeychainFile.exists()) {
+                        bundleID = "de.connect2x.tammy"
                         signing {
                             sign = true
                             keychain = "apple_keychain.keychain"

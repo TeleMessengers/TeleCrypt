@@ -97,16 +97,16 @@
             </div>
             <div class="download-card animated fadeInLeft">
                 <h3>{{ i18n "download.windows.title" }}</h3>
-                <a href="https://app.tammy.connect2x.de/Tammy-Windows.appinstaller" class="download-button">{{ i18n
+                <a href="{{ .Site.BaseURL }}Tammy-Windows.appinstaller" class="download-button">{{ i18n
                     "download.windows.appinstaller" }}</a>
-                <a href="https://app.tammy.connect2x.de/Tammy-Windows.msix" class="download-button">{{ i18n
+                <a href="{{ .Site.Params.downloads.TammyWindowsmsix }}" class="download-button">{{ i18n
                     "download.windows.msix" }}</a>
             </div>
             <div class="download-card animated fadeInLeft">
                 <h3>{{ i18n "download.mac.title" }}</h3>
-                <a href="https://app.tammy.connect2x.de/Tammy-Mac.dmg" class="download-button">{{ i18n
+                <a href="{{ .Site.Params.downloads.TammyMacdmg }}" class="download-button">{{ i18n
                     "download.mac.dmg" }}</a>
-                <a href="https://app.tammy.connect2x.de/Tammy-Mac.pkg" class="download-button">{{ i18n
+                <a href="{{ .Site.Params.downloads.TammyMacpkg }}" class="download-button">{{ i18n
                     "download.mac.pkg" }}</a>
             </div>
             <div class="download-card animated fadeInLeft">

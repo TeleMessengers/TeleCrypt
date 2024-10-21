@@ -372,11 +372,11 @@ val distributions = listOf(
     ),
     Distribution(
         "dmg", "Mac",
-        listOf("packageReleaseDmg", "notarizeReleaseDmg")
+        listOf("packageReleaseDmg")// , "notarizeReleaseDmg")// FIXME current keychain not working
     ),
     Distribution(
         "pkg", "Mac",
-        listOf("packageReleasePkg", "notarizeReleasePkg")
+        listOf("packageReleasePkg")//, "notarizeReleasePkg")// FIXME current keychain not working
     ),
     Distribution(
         "zip", "Mac",

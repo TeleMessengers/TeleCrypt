@@ -42,10 +42,9 @@ download:
   mac:
     title: MacOS
     dmg: DMG
-    pkg: PKG
   linux:
     title: Linux
     soon: Bald verfügbar!
   web:
-    title: Web
+    title: Web (Beta)
     app: Web-App

@@ -203,9 +203,9 @@ compose {
                     // TargetFormat.Exe, // no deeplink support
                     // TargetFormat.Msi, // no deeplink support
                     TargetFormat.Dmg,
-                    TargetFormat.Pkg,
-                    TargetFormat.Deb,
-                    TargetFormat.Rpm,
+                    // TargetFormat.Pkg, // signing problems
+                    // TargetFormat.Deb, // no deeplink support
+                    // TargetFormat.Rpm, // no deeplink support
                 )
                 appResourcesRootDir.set(layout.buildDirectory) // @see https://github.com/JetBrains/compose-jb/tree/master/tutorials/Native_distributions_and_local_execution#jvm-resource-loading
                 packageName = appName
@@ -374,10 +374,10 @@ val distributions = listOf(
         "dmg", "Mac",
         listOf("packageReleaseDmg", "notarizeReleaseDmg")
     ),
-    Distribution(
-        "pkg", "Mac",
-        listOf("packageReleasePkg", "notarizeReleasePkg")
-    ),
+//    Distribution( // signing problems
+//        "pkg", "Mac",
+//        listOf("packageReleasePkg", "notarizeReleasePkg")
+//    ),
     Distribution(
         "zip", "Mac",
         listOf("createReleaseDistributable")

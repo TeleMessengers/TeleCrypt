@@ -222,19 +222,19 @@ compose {
                 }
                 macOS {
                     val appleKeychainFile = file("apple_keychain.keychain")
-//                    if (appleKeychainFile.exists()) { // FIXME current keychain not working
-//                        bundleID = "de.connect2x.tammy"
-//                        signing {
-//                            sign = true
-//                            keychain = "apple_keychain.keychain"
-//                            identity = "connect2x GmbH"
-//                        }
-//                        notarization {
-//                            teamID = System.getenv("APPLE_TEAM_ID")
-//                            appleID = System.getenv("APPLE_ID")
-//                            password = System.getenv("APPLE_NOTARIZATION_PASSWORD")
-//                        }
-//                    }
+                    if (appleKeychainFile.exists()) {
+                        bundleID = "de.connect2x.tammy"
+                        signing {
+                            sign = true
+                            keychain = "apple_keychain.keychain"
+                            identity = System.getenv("APPLE_KEYCHAIN_IDENTITY")
+                        }
+                        notarization {
+                            teamID = System.getenv("APPLE_TEAM_ID")
+                            appleID = System.getenv("APPLE_ID")
+                            password = System.getenv("APPLE_NOTARIZATION_PASSWORD")
+                        }
+                    }
                     iconFile.set(project.file("src/desktopMain/resources/logo.icns"))
                     infoPlist {
                         extraKeysRawXml = """
@@ -372,11 +372,11 @@ val distributions = listOf(
     ),
     Distribution(
         "dmg", "Mac",
-        listOf("packageReleaseDmg")// , "notarizeReleaseDmg")// FIXME current keychain not working
+        listOf("packageReleaseDmg", "notarizeReleaseDmg")
     ),
     Distribution(
         "pkg", "Mac",
-        listOf("packageReleasePkg")//, "notarizeReleasePkg")// FIXME current keychain not working
+        listOf("packageReleasePkg", "notarizeReleasePkg")
     ),
     Distribution(
         "zip", "Mac",

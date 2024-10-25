@@ -17,8 +17,8 @@ fun tammyConfiguration(
     packageName = "de.connect2x"
     licenses = BuildConfig.licenses
     sendLogsEmailAddress = "error-reports@connect2x.de"
-    privacyInfoUrl = "https://gitlab.com/connect2x/tammy/-/blob/main/PRIVACY.md"
-    imprintUrl = "https://tammy.connect2x.de/en-us/imprint/"
+    privacyInfoUrl = "https://tammy.connect2x.de/en-us/privacy"
+    imprintUrl = "https://tammy.connect2x.de/en-us/imprint"
     urlProtocol = BuildConfig.appNameCleaned
     pushUrl = "https://sygnal.demo.timmy-messenger.de/_matrix/push/v1/notify"
     multiProfile = false

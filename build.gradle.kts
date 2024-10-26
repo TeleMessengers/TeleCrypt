@@ -668,9 +668,9 @@ val createWebsiteRedirects by tasks.registering {
 
 val createWebsiteMsixAppinstaller by tasks.registering {
     doLast {
-        val websiteBaseUrl = "https://tammy.connect2x.de/"
+        val websiteBaseUrl = "https://tammy.connect2x.de"
         val appinstallerFileName = "$appName-Windows.appinstaller"
-        val msixDistribution = distributions.first { it.platform == "Windows" && it.type != "msix" }
+        val msixDistribution = distributions.first { it.platform == "Windows" && it.type == "msix" }
         val uri = msixDistribution.packageRegistryUrl(true)
         layout.projectDirectory.asFile
             .resolve("website")

@@ -207,7 +207,6 @@ compose {
                     // TargetFormat.Deb, // no deeplink support
                     // TargetFormat.Rpm, // no deeplink support
                 )
-                appResourcesRootDir.set(layout.buildDirectory) // @see https://github.com/JetBrains/compose-jb/tree/master/tutorials/Native_distributions_and_local_execution#jvm-resource-loading
                 packageName = appName
                 packageVersion = rawAppVersion
 

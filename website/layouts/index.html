@@ -88,28 +88,48 @@
         <div class="download-container">
             <div class="download-card animated fadeInLeft">
                 <h3>{{ i18n "download.android.title" }}</h3>
-                <a href="https://play.google.com/store/apps/details?id=de.connect2x.tammy" class="download-button">{{
-                    i18n "download.android.store" }}</a>
-                <a href="{{ .Site.Params.downloads.TammyAndroidapk }}" class="download-button">{{ i18n
-                    "download.android.apk" }}</a>
-                <a href="{{ .Site.Params.downloads.TammyAndroidaab }}" class="download-button">{{ i18n
-                    "download.android.aab" }}</a>
+                <a href="https://play.google.com/store/apps/details?id=de.connect2x.tammy" class="download-button">
+                    {{ i18n "download.android.store" }}
+                </a>
+                <a href="{{ .Site.Params.downloads.TammyAndroidapk }}" class="download-button">
+                    {{ i18n "download.android.apk" }}
+                </a>
+                <a href="{{ .Site.Params.downloads.TammyAndroidaab }}" class="download-button">
+                    {{ i18n "download.android.aab" }}
+                </a>
             </div>
             <div class="download-card animated fadeInLeft">
                 <h3>{{ i18n "download.windows.title" }}</h3>
-                <a href="{{ .Site.BaseURL }}Tammy-Windows.appinstaller" class="download-button">{{ i18n
-                    "download.windows.appinstaller" }}</a>
-                <a href="{{ .Site.Params.downloads.TammyWindowsmsix }}" class="download-button">{{ i18n
-                    "download.windows.msix" }}</a>
+                <a href="{{ .Site.BaseURL }}Tammy-Windows-x64.appinstaller" class="download-button">
+                    {{ i18n "download.windows.appinstaller" }} (x64)
+                </a>
+                <a href="{{ .Site.Params.downloads.TammyWindowsx64msix }}" class="download-button">
+                    {{ i18n "download.windows.msix" }} (x64)
+                </a>
+                <a href="{{ .Site.Params.downloads.TammyWindowsx64zip }}" class="download-button">
+                    {{ i18n "download.windows.zip" }} (x64)
+                </a>
             </div>
             <div class="download-card animated fadeInLeft">
                 <h3>{{ i18n "download.mac.title" }}</h3>
-                <a href="{{ .Site.Params.downloads.TammyMacdmg }}" class="download-button">{{ i18n
-                    "download.mac.dmg" }}</a>
+                <a href="{{ .Site.Params.downloads.TammyMacOSarm64dmg }}" class="download-button">
+                    {{ i18n "download.mac.dmg" }} (arm64)
+                </a>
+                <a href="{{ .Site.Params.downloads.TammyMacOSx64dmg }}" class="download-button">
+                    {{ i18n "download.mac.dmg" }} (x64)
+                </a>
+                <a href="{{ .Site.Params.downloads.TammyMacOSarm64zip }}" class="download-button">
+                    {{ i18n "download.mac.zip" }} (arm64)
+                </a>
+                <a href="{{ .Site.Params.downloads.TammyMacOSx64zip }}" class="download-button">
+                    {{ i18n "download.mac.zip" }} (x64)
+                </a>
             </div>
             <div class="download-card animated fadeInLeft">
                 <h3>{{ i18n "download.web.title" }}</h3>
-                <a href="https://app.tammy.connect2x.de" class="download-button">{{ i18n "download.web.app" }}</a>
+                <a href="https://app.tammy.connect2x.de" class="download-button">
+                    {{ i18n "download.web.app" }}
+                </a>
             </div>
             <div class="download-card animated fadeInLeft">
                 <h3>{{ i18n "download.ios.title" }}</h3>

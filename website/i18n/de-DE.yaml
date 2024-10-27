@@ -38,11 +38,13 @@ download:
     soon: Bald verfügbar!
   windows:
     title: Windows
-    appinstaller: AppInstaller (automatische Updates)
+    appinstaller: AppInstaller mit automatischen Updates
     msix: MSIX
+    zip: ZIP
   mac:
     title: MacOS
     dmg: DMG
+    zip: ZIP
   linux:
     title: Linux
     soon: Bald verfügbar!

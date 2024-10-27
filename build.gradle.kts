@@ -1,4 +1,5 @@
 import com.mikepenz.aboutlibraries.plugin.AboutLibrariesTask
+import org.gradle.nativeplatform.platform.internal.DefaultArchitecture
 import org.gradle.nativeplatform.platform.internal.DefaultOperatingSystem
 import org.jetbrains.compose.desktop.application.dsl.TargetFormat
 import org.jetbrains.kotlin.gradle.ExperimentalKotlinGradlePluginApi
@@ -45,6 +46,9 @@ val appDistributionDir: Provider<Directory> = distributionDir.map { it.dir("app"
 
 val os: DefaultOperatingSystem =
     org.gradle.nativeplatform.platform.internal.DefaultNativePlatform.getCurrentOperatingSystem()
+val arch: DefaultArchitecture =
+    org.gradle.nativeplatform.platform.internal.DefaultNativePlatform.getCurrentArchitecture()
+        .let { DefaultArchitecture(it.name) }
 
 enum class BuildFlavor { PROD, DEV }
 
@@ -332,73 +336,60 @@ val gitLabProjectUrl = "${System.getenv("CI_API_V4_URL")}/projects/${System.gete
 data class Distribution(
     val type: String,
     val platform: String,
+    val architecture: String,
     val tasks: List<String>,
     val originalFileName: String = "$appName-$rawAppVersion.$type",
 ) {
-    val fileName = "$appName-$platform-$rawAppVersion.$type"
+    val fileName = "$appName-$platform-$architecture-$rawAppVersion.$type"
 
     fun packageRegistryUrl(raw: Boolean) =
-        "$gitLabProjectUrl/packages/generic/$appName-$platform.$type/" +
+        "$gitLabProjectUrl/packages/generic/$appName-$platform-$architecture.$type/" +
                 "${if (raw) rawAppVersion else appVersion}/" +
-                if (raw) fileName else "$appName-$platform-$appVersion.$type"
+                if (raw) fileName else "$appName-$platform-$architecture-$appVersion.$type"
 }
 
 val distributions = listOf(
     Distribution(
-        "aab", "Android",
+        "aab", "Android", "universal",
         listOf("bundleRelease"),
         "$appName-release.aab"
     ),
     Distribution(
-        "apk", "Android",
+        "apk", "Android", "universal",
         listOf("assembleRelease"),
         "$appName-release.apk"
     ),
-//    Distribution( // no deeplink support
-//        "deb", "Linux",
-//        listOf("packageReleaseDeb"),
-//        "${appNameCleaned}_${rawAppVersion}_amd64.deb"
-//    ),
-//    Distribution( // no deeplink support
-//        "rpm", "Linux",
-//        listOf("packageReleaseRpm"),
-//        "$appNameCleaned-$rawAppVersion-1.x86_64.rpm"
-//    ),
     Distribution(
-        "zip", "Linux",
-        listOf("createReleaseDistributable")
+        "zip", "Linux", "x64",
+        listOf("packageReleasePlatformZip")
     ),
     Distribution(
-        "dmg", "Mac",
+        "dmg", "MacOS", "x64",
         listOf("packageReleaseDmg", "notarizeReleaseDmg")
     ),
-//    Distribution( // signing problems
-//        "pkg", "Mac",
-//        listOf("packageReleasePkg", "notarizeReleasePkg")
-//    ),
     Distribution(
-        "zip", "Mac",
-        listOf("createReleaseDistributable")
+        "zip", "MacOS", "x64",
+        listOf("packageReleasePlatformZip")
     ),
-//    Distribution( // no deeplink support
-//        "exe", "Windows",
-//        listOf("packageReleaseExe")
-//    ),
-//    Distribution( // no deeplink support
-//        "msi", "Windows",
-//        listOf("packageReleaseMsi")
-//    ),
     Distribution(
-        "msix", "Windows",
+        "dmg", "MacOS", "arm64",
+        listOf("packageReleaseDmg", "notarizeReleaseDmg")
+    ),
+    Distribution(
+        "zip", "MacOS", "arm64",
+        listOf("packageReleasePlatformZip")
+    ),
+    Distribution(
+        "msix", "Windows", "x64",
         listOf("packageReleaseMsix", "notarizeReleaseMsix")
     ),
     Distribution(
-        "zip", "Windows",
-        listOf("createReleaseDistributable")
+        "zip", "Windows", "x64",
+        listOf("packageReleasePlatformZip")
     ),
     Distribution(
-        "zip", "Web",
-        listOf("webBrowserDistribution")
+        "zip", "Web", "universal",
+        listOf("packageReleaseWebZip")
     ),
 )
 
@@ -542,11 +533,18 @@ fun uploadDistributableToPackageRegistry(distribution: Distribution) {
 
 val platformName: String = when {
     os.isLinux -> "Linux"
-    os.isMacOsX -> "Mac"
+    os.isMacOsX -> "MacOS"
     os.isWindows -> "Windows"
-    else -> os.displayName
+    else -> throw IllegalStateException("${os.name} is not supported")
 }
-val platformZipDistribution = distributions.first { it.type == "zip" && it.platform == platformName }
+val architectureName: String = when {
+    arch.isAmd64 -> "x86"
+    arch.isArm64 -> "arm64"
+    else -> throw IllegalStateException("${arch.name} is not supported")
+}
+
+val platformZipDistribution =
+    distributions.first { it.type == "zip" && it.platform == platformName && it.architecture == architectureName }
 val zipDistributionDir = distributionDir.map { it.dir("zip").also { it.asFile.createDirectory() } }
 
 val packageReleasePlatformZip by tasks.creating(Zip::class) {
@@ -555,15 +553,36 @@ val packageReleasePlatformZip by tasks.creating(Zip::class) {
 
     archiveFileName = platformZipDistribution.originalFileName
     destinationDirectory = zipDistributionDir
-    dependsOn.addAll(platformZipDistribution.tasks + copyMsixLogos)// copyMsixLogos because of implicit dependency
+    dependsOn.addAll(listOf("createReleaseDistributable", copyMsixLogos))// copyMsixLogos because of implicit dependency
 }
 
-val uploadPlatformZipDistributable by tasks.registering {
+val webZipDistribution = distributions.first { it.type == "zip" && it.platform == "Web" }
+
+val packageReleaseWebZip by tasks.creating(Zip::class) {
+    group = "compose desktop"
+    from(distributionDir.map { it.dir("web") })
+    archiveFileName = webZipDistribution.originalFileName
+    destinationDirectory = zipDistributionDir
+    dependsOn.add("webBrowserDistribution")
+}
+
+val uploadWebZipDistributable by tasks.registering {
     group = "release"
     doLast {
-        uploadDistributableToPackageRegistry(platformZipDistribution)
+        uploadDistributableToPackageRegistry(webZipDistribution)
     }
-    dependsOn(packageReleasePlatformZip)
+    dependsOn.addAll(webZipDistribution.tasks)
+}
+
+val uploadPlatformDistributable by tasks.registering {
+    group = "release"
+    val thisDistributions = distributions.filter { it.platform == platformName && it.architecture == architectureName }
+    doLast {
+        thisDistributions.forEach {
+            uploadDistributableToPackageRegistry(it)
+        }
+    }
+    dependsOn.addAll(thisDistributions.flatMap { it.tasks.toList() })
 }
 
 val uploadAndroidDistributable by tasks.registering {
@@ -586,60 +605,6 @@ val uploadAndroidDistributable by tasks.registering {
     dependsOn.addAll(apkDistribution.tasks)
 }
 
-val webZipDistribution = distributions.first { it.type == "zip" && it.platform == "Web" }
-
-val packageReleaseWebZip by tasks.creating(Zip::class) {
-    group = "compose desktop"
-    from(distributionDir.map { it.dir("web") })
-    archiveFileName = webZipDistribution.originalFileName
-    destinationDirectory = zipDistributionDir
-    dependsOn.addAll(webZipDistribution.tasks)
-}
-
-val uploadWebZipDistributable by tasks.registering {
-    group = "release"
-    doLast {
-        uploadDistributableToPackageRegistry(webZipDistribution)
-    }
-    dependsOn(packageReleaseWebZip)
-}
-
-val uploadLinuxDistributable by tasks.registering {
-    group = "release"
-    val thisDistributions = distributions.filter { it.platform == "Linux" }
-    doLast {
-        thisDistributions.forEach {
-            uploadDistributableToPackageRegistry(it)
-        }
-    }
-    dependsOn.addAll(thisDistributions.flatMap { it.tasks.toList() })
-    onlyIf { os.isLinux }
-}
-
-val uploadMacDistributable by tasks.registering {
-    group = "release"
-    val thisDistributions = distributions.filter { it.platform == "Mac" }
-    doLast {
-        thisDistributions.forEach {
-            uploadDistributableToPackageRegistry(it)
-        }
-    }
-    dependsOn.addAll(thisDistributions.flatMap { it.tasks.toList() })
-    onlyIf { os.isMacOsX }
-}
-
-val uploadWindowsDistributable by tasks.registering {
-    group = "release"
-    val thisDistributions = distributions.filter { it.platform == "Windows" }
-    doLast {
-        thisDistributions.forEach {
-            uploadDistributableToPackageRegistry(it)
-        }
-    }
-    dependsOn.addAll(thisDistributions.flatMap { it.tasks.toList() })
-    onlyIf { os.isWindows }
-}
-
 // #####################################################################################################################
 // release
 // #####################################################################################################################
@@ -649,10 +614,11 @@ val publicDir = provider {
         .resolve("public").also { it.createDirectory() }
 }
 
-val createWebsiteRedirects by tasks.registering {
+val createWebsiteDownloadLinks by tasks.registering {
     doLast {
         fun links(distribution: Distribution) =
-            "$appName${distribution.platform}${distribution.type}: ${distribution.packageRegistryUrl(true)}"
+            "$appName${distribution.platform}${distribution.architecture}${distribution.type}: " +
+                    distribution.packageRegistryUrl(true)
 
         layout.projectDirectory.asFile
             .resolve("website")
@@ -666,20 +632,20 @@ val createWebsiteRedirects by tasks.registering {
     }
 }
 
-val createWebsiteMsixAppinstaller by tasks.registering {
-    doLast {
-        val websiteBaseUrl = "https://tammy.connect2x.de"
-        val appinstallerFileName = "$appName-Windows.appinstaller"
-        val msixDistribution = distributions.first { it.platform == "Windows" && it.type == "msix" }
-        val uri = msixDistribution.packageRegistryUrl(true)
-        layout.projectDirectory.asFile
-            .resolve("website")
-            .resolve("static").also { it.createDirectory() }
-            .resolve(appinstallerFileName)
-            .apply {
-                createNewFile()
-                writeText(
-                    """
+fun createWebsiteMsixAppinstaller(architecture: String) {
+    val websiteBaseUrl = "https://tammy.connect2x.de"
+    val appinstallerFileName = "$appName-Windows-$architecture.appinstaller"
+    val msixDistribution =
+        distributions.first { it.platform == "Windows" && it.type == "msix" && it.architecture == architecture }
+    val uri = msixDistribution.packageRegistryUrl(true)
+    layout.projectDirectory.asFile
+        .resolve("website")
+        .resolve("static").also { it.createDirectory() }
+        .resolve(appinstallerFileName)
+        .apply {
+            createNewFile()
+            writeText(
+                """
                         <?xml version="1.0" encoding="utf-8"?>
                         <AppInstaller
                             xmlns="http://schemas.microsoft.com/appx/appinstaller/2018"
@@ -701,8 +667,13 @@ val createWebsiteMsixAppinstaller by tasks.registering {
                             </UpdateSettings>
                         </AppInstaller>
                 """.trimIndent()
-                )
-            }
+            )
+        }
+}
+
+val createWebsiteMsixX64Appinstaller by tasks.registering {
+    doLast {
+        createWebsiteMsixAppinstaller("x64")
     }
 }
 
@@ -724,8 +695,8 @@ val createWebsiteFastlaneMetadata by tasks.registering(Copy::class) {
 val createWebsite by tasks.registering {
     group = "release"
     dependsOn(
-        createWebsiteRedirects,
-        createWebsiteMsixAppinstaller,
+        createWebsiteDownloadLinks,
+        createWebsiteMsixX64Appinstaller,
         createWebsiteWebApp,
         createWebsiteFastlaneMetadata
     )

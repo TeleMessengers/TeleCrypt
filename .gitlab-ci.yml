@@ -37,7 +37,7 @@ variables:
     - $KONAN_DATA_DIR
     - $KOTLIN_DATA_DIR
 
-.build-cache-linux: &build-cache-linux
+.build-cache-linux-x64: &build-cache-linux-x64
   paths:
     - $GRADLE_USER_HOME
     - $KONAN_DATA_DIR
@@ -49,13 +49,19 @@ variables:
     - $KONAN_DATA_DIR
     - $KOTLIN_DATA_DIR
 
-.build-cache-mac: &build-cache-mac
+.build-cache-mac-x64: &build-cache-mac-x64
   paths:
     - $GRADLE_USER_HOME
     - $KONAN_DATA_DIR
     - $KOTLIN_DATA_DIR
 
-.build-cache-windows: &build-cache-windows
+.build-cache-mac-arm64: &build-cache-mac-arm64
+  paths:
+    - $GRADLE_USER_HOME
+    - $KONAN_DATA_DIR
+    - $KOTLIN_DATA_DIR
+
+.build-cache-windows-x64: &build-cache-windows-x64
   paths:
     - $GRADLE_USER_HOME
     - $KONAN_DATA_DIR
@@ -101,12 +107,12 @@ binaries:android:
       uploadAndroidDistributable
       --stacktrace
 
-binaries:linux:
+binaries:linux-x64:
   stage: binaries
   interruptible: true
   tags: [ "saas-linux-medium-amd64" ]
   image: $BUILD_LINUX_IMAGE_NAME_BASE
-  cache: *build-cache-linux
+  cache: *build-cache-linux-x64
   rules:
     - *if-main
     - *if-release
@@ -118,8 +124,7 @@ binaries:linux:
       - "build/compose"
   script:
     - ./gradlew
-      uploadPlatformZipDistributable
-      uploadLinuxDistributable
+      uploadPlatformDistributable
       --stacktrace
 
 binaries:web:
@@ -142,11 +147,11 @@ binaries:web:
       uploadWebZipDistributable
       --stacktrace
 
-binaries:win:
+binaries:win-x64:
   stage: binaries
   interruptible: true
   tags: [ "connect2x-win" ]
-  cache: *build-cache-windows
+  cache: *build-cache-windows-x64
   rules:
     - *if-main
     - *if-release
@@ -158,15 +163,14 @@ binaries:win:
       - "build/compose"
   script:
     - ./gradlew
-      uploadPlatformZipDistributable
-      uploadWindowsDistributable
+      uploadPlatformDistributable
       --stacktrace
 
-binaries:mac:
+binaries:mac-x64:
   stage: binaries
   interruptible: true
   tags: [ "connect2x-mac" ]
-  cache: *build-cache-mac
+  cache: *build-cache-mac-x64
   rules:
     - *if-main
     - *if-release
@@ -183,8 +187,36 @@ binaries:mac:
     - security set-keychain-settings -t 600 "$(realpath apple_keychain.keychain)"
   script:
     - ./gradlew
-      uploadPlatformZipDistributable
-      uploadMacDistributable
+      uploadPlatformDistributable
+      --stacktrace
+
+binaries:mac-arm64:
+  stage: binaries
+  interruptible: true
+  tags: [ "csaas-macos-medium-m1" ]
+  timeout: 30m
+  variables:
+    HOMEBREW_NO_AUTO_UPDATE: 1
+  cache: *build-cache-mac-arm64
+  rules:
+    - *if-main
+    - *if-release
+  artifacts:
+    name: binaries
+    when: always
+    expire_in: 1 day
+    paths:
+      - "build/compose"
+  before_script:
+    - brew tap homebrew/cask-versions
+    - brew install --cask temurin@21
+    - echo $APPLE_KEYCHAIN_FILE_BASE64 | base64 --decode > apple_keychain.keychain
+    - security list-keychains -d user -s "$(realpath apple_keychain.keychain)"
+    - security unlock-keychain -p $APPLE_KEYCHAIN_PASSWORD "$(realpath apple_keychain.keychain)"
+    - security set-keychain-settings -t 600 "$(realpath apple_keychain.keychain)"
+  script:
+    - ./gradlew
+      uploadPlatformDistributable
       --stacktrace
 
 website:webapp:
@@ -315,7 +347,7 @@ release:gitlab:
   interruptible: true
   tags: [ "saas-linux-small-amd64" ]
   image: $BUILD_LINUX_IMAGE_NAME_BASE
-  cache: *build-cache-linux
+  cache: *build-cache-linux-x64
   rules:
     - *if-release
   script:

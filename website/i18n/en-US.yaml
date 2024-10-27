@@ -38,11 +38,13 @@ download:
     soon: Coming Soon!
   windows:
     title: Windows
-    appinstaller: AppInstaller (auto-update)
+    appinstaller: AppInstaller with auto-update
     msix: MSIX
+    zip: ZIP
   mac:
     title: MacOS
     dmg: DMG
+    zip: ZIP
   linux:
     title: Linux
     soon: Coming Soon!

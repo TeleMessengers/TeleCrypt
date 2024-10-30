@@ -35,7 +35,7 @@ repositories {
 val rawAppVersion = "1.0.0"
 val appVersion = withVersionSuffix(rawAppVersion)
 val appName = "Tammy"
-val appNameCleaned = appName.replace("[-.\\s]".toRegex(), "").lowercase()
+val appId = "de.connect2x.tammy"
 
 group = "de.connect2x"
 version = appVersion
@@ -66,19 +66,19 @@ val buildConfigGenerator by tasks.registering {
     inputs.file(licencesFile)
     doLast {
         val outputFile = generatedSrc.get()
-            .dir("de/connect2x/$appNameCleaned")
+            .dir(appId.replace(".", "/"))
             .file("BuildConfig.kt")
         val licencesString = licencesFile.readText()
         val quotes = "\"\"\""
         val buildConfigString =
             """
-            package de.connect2x.$appNameCleaned
+            package $appId
             
             object BuildConfig {
                 const val version = "$version"
                 val flavor = Flavor.valueOf("$buildFlavor")
                 const val appName = "$appName"
-                const val appNameCleaned = "$appNameCleaned"
+                const val appId = "$appId"
                 val licenses = $quotes$licencesString$quotes
             }
             
@@ -116,10 +116,10 @@ kotlin {
     js("web", IR) {
         browser {
             runTask {
-                mainOutputFileName = "$appNameCleaned.js"
+                mainOutputFileName = "$appId.js"
             }
             webpackTask {
-                mainOutputFileName = "$appNameCleaned.js"
+                mainOutputFileName = "$appId.js"
             }
             @OptIn(ExperimentalDistributionDsl::class)
             distribution {
@@ -195,7 +195,7 @@ composeCompiler {
 compose {
     desktop {
         application {
-            mainClass = "de.connect2x.$appNameCleaned.desktop.MainKt"
+            mainClass = "$appId.desktop.MainKt"
             jvmArgs("-Xmx2G")
 
             buildTypes.release.proguard {
@@ -225,7 +225,7 @@ compose {
                 macOS {
                     val appleKeychainFile = file("apple_keychain.keychain")
                     if (appleKeychainFile.exists()) {
-                        bundleID = "de.connect2x.tammy"
+                        bundleID = appId
                         signing {
                             sign = true
                             keychain = "apple_keychain.keychain"
@@ -247,7 +247,7 @@ compose {
                                   <string>$appName</string>
                                   <key>CFBundleURLSchemes</key>
                                   <array>
-                                    <string>$appNameCleaned</string>
+                                    <string>$appId</string>
                                   </array>
                                 </dict>
                               </array>
@@ -260,7 +260,7 @@ compose {
 }
 
 android {
-    namespace = "de.connect2x.$appNameCleaned"
+    namespace = appId
     buildFeatures {
         compose = true
     }
@@ -271,10 +271,10 @@ android {
         targetSdk = libs.versions.androidTargetSDK.get().toInt()
         versionCode = System.getenv("CI_PIPELINE_IID")?.toInt() ?: 1
         versionName = appVersion
-        applicationId = "de.connect2x.${appNameCleaned}"
+        applicationId = appId
         setProperty("archivesBaseName", appName)
         resValue("string", "app_name", appName)
-        resValue("string", "scheme", appNameCleaned)
+        resValue("string", "scheme", appId)
         testInstrumentationRunner = "androidx.test.runner.AndroidJUnitRunner"
     }
 
@@ -398,7 +398,6 @@ val distributions = listOf(
 // #####################################################################################################################
 
 val appDescription = "Matrix Messenger Client"
-val appPackage = "de.connect2x.timmy"
 val misxDistribution = distributions.first { it.type == "msix" && it.platform == "Windows" }
 val publisherName = "connect2x GmbH"
 val publisherCN = "CN=connect2x GmbH, O=connect2x GmbH, L=Dippoldiswalde, S=Saxony, C=DE"
@@ -427,7 +426,7 @@ val createMsixManifest by tasks.registering {
                   xmlns:uap10="http://schemas.microsoft.com/appx/manifest/uap/windows10/10"
                   xmlns:rescap="http://schemas.microsoft.com/appx/manifest/foundation/windows10/restrictedcapabilities"
                   IgnorableNamespaces="uap10 rescap">
-                  <Identity Name="$appPackage" Publisher="$publisherCN" Version="${rawAppVersion.toMsix()}" ProcessorArchitecture="x64" />
+                  <Identity Name="$appId" Publisher="$publisherCN" Version="${rawAppVersion.toMsix()}" ProcessorArchitecture="x64" />
                   <Properties>
                     <DisplayName>$appName</DisplayName>
                     <PublisherDisplayName>$publisherName</PublisherDisplayName>
@@ -448,14 +447,14 @@ val createMsixManifest by tasks.registering {
                   </Capabilities>
                   <Applications>
                     <Application
-                      Id="$appPackage"
+                      Id="$appId"
                       Executable="$appName.exe"
                       EntryPoint="Windows.FullTrustApplication">
                       <uap:VisualElements DisplayName="$appName" Description="$appDescription"	Square150x150Logo="$logo155FileName"
                          Square44x44Logo="$logo44FileName" BackgroundColor="white" />
                       <Extensions>
                         <uap:Extension Category="windows.protocol">
-                          <uap:Protocol Name="$appNameCleaned" />
+                          <uap:Protocol Name="$appId" />
                         </uap:Extension>
                       </Extensions>
                     </Application>
@@ -652,7 +651,7 @@ fun createWebsiteMsixAppinstaller(architecture: String) {
                             Version="${rawAppVersion.toMsix()}"
                             Uri="$websiteBaseUrl/$appinstallerFileName">
                             <MainPackage
-                                Name="$appPackage"
+                                Name="$appId"
                                 Publisher="$publisherCN"
                                 Version="${rawAppVersion.toMsix()}"
                                 ProcessorArchitecture="x64"

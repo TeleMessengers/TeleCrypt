@@ -14,12 +14,12 @@ fun tammyConfiguration(
     customConfig: MatrixMultiMessengerConfiguration.() -> Unit = {},
 ): MatrixMultiMessengerConfiguration.() -> Unit = {
     appName = BuildConfig.appName
-    packageName = "de.connect2x"
+    appId = BuildConfig.appId
+    urlProtocol = BuildConfig.appId
     licenses = BuildConfig.licenses
     sendLogsEmailAddress = "error-reports@connect2x.de"
     privacyInfoUrl = "https://tammy.connect2x.de/en-us/privacy"
     imprintUrl = "https://tammy.connect2x.de/en-us/imprint"
-    urlProtocol = BuildConfig.appNameCleaned
     pushUrl = "https://sygnal.demo.timmy-messenger.de/_matrix/push/v1/notify"
     multiProfile = false
     modules += listOf(

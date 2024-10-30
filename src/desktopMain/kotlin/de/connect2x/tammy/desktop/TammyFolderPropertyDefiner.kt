@@ -9,5 +9,5 @@ class TammyFolderPropertyDefiner : PropertyDefinerBase() {
     override fun getPropertyValue(): String =
         if (System.getenv("TRIXNITY_MESSENGER_ROOT_PATH") == null && BuildConfig.flavor == Flavor.DEV) {
             "./app-data"
-        } else getAppPath(BuildConfig.appNameCleaned).toString()
+        } else getAppPath(BuildConfig.appId).toString()
 }

@@ -218,7 +218,7 @@ build:macos-arm64:
       --stacktrace
 
 build:prepare-website:
-  stage: website
+  stage: build
   interruptible: true
   tags: [ "connect2x-linux" ]
   image: $BUILD_LINUX_IMAGE_NAME_BASE
@@ -237,7 +237,7 @@ build:prepare-website:
       --stacktrace
 
 build:website:
-  stage: website
+  stage: build
   tags: [ "connect2x-linux" ]
   image: registry.gitlab.com/pages/hugo/hugo_extended:latest
   needs: [ "build:prepare-website" ]

@@ -608,11 +608,6 @@ val uploadAndroidDistributable by tasks.registering {
 // release
 // #####################################################################################################################
 
-val publicDir = provider {
-    layout.projectDirectory.asFile
-        .resolve("public").also { it.createDirectory() }
-}
-
 val createWebsiteDownloadLinks by tasks.registering {
     doLast {
         fun links(distribution: Distribution) =
@@ -676,12 +671,6 @@ val createWebsiteMsixX64Appinstaller by tasks.registering {
     }
 }
 
-val createWebsiteWebApp by tasks.registering(Copy::class) {
-    from(distributionDir.map { it.dir("web") })
-    into(publicDir)
-    dependsOn(webZipDistribution.tasks)
-}
-
 val createWebsiteFastlaneMetadata by tasks.registering(Copy::class) {
     from(layout.projectDirectory.dir("fastlane").dir("metadata"))
     into(layout.projectDirectory.asFile
@@ -691,12 +680,11 @@ val createWebsiteFastlaneMetadata by tasks.registering(Copy::class) {
     )
 }
 
-val createWebsite by tasks.registering {
+val prepareWebsite by tasks.registering {
     group = "release"
     dependsOn(
         createWebsiteDownloadLinks,
         createWebsiteMsixX64Appinstaller,
-        createWebsiteWebApp,
         createWebsiteFastlaneMetadata
     )
 }

@@ -8,8 +8,7 @@ workflow:
 
 stages:
   - changelog
-  - binaries
-  - website
+  - build
   - release
 
 variables:
@@ -84,8 +83,8 @@ changelog:
         exit 1
       fi
 
-binaries:android:
-  stage: binaries
+build:android:
+  stage: build
   interruptible: true
   tags: [ "connect2x-linux" ]
   image: $BUILD_LINUX_IMAGE_NAME_BASE
@@ -94,7 +93,7 @@ binaries:android:
     - *if-main
     - *if-release
   artifacts:
-    name: binaries
+    name: build
     when: always
     expire_in: 1 day
     paths:
@@ -107,8 +106,8 @@ binaries:android:
       uploadAndroidDistributable
       --stacktrace
 
-binaries:linux-x64:
-  stage: binaries
+build:linux-x64:
+  stage: build
   interruptible: true
   tags: [ "connect2x-linux" ]
   image: $BUILD_LINUX_IMAGE_NAME_BASE
@@ -117,7 +116,7 @@ binaries:linux-x64:
     - *if-main
     - *if-release
   artifacts:
-    name: binaries
+    name: build
     when: always
     expire_in: 1 day
     paths:
@@ -127,8 +126,8 @@ binaries:linux-x64:
       uploadPlatformDistributable
       --stacktrace
 
-binaries:web:
-  stage: binaries
+build:web:
+  stage: build
   interruptible: true
   tags: [ "connect2x-linux" ]
   image: $BUILD_LINUX_IMAGE_NAME_BASE
@@ -137,7 +136,7 @@ binaries:web:
     - *if-main
     - *if-release
   artifacts:
-    name: binaries
+    name: build
     when: always
     expire_in: 1 day
     paths:
@@ -147,8 +146,8 @@ binaries:web:
       uploadWebZipDistributable
       --stacktrace
 
-binaries:win-x64:
-  stage: binaries
+build:win-x64:
+  stage: build
   interruptible: true
   tags: [ "connect2x-win" ]
   cache: *build-cache-windows-x64
@@ -156,7 +155,7 @@ binaries:win-x64:
     - *if-main
     - *if-release
   artifacts:
-    name: binaries
+    name: build
     when: always
     expire_in: 1 day
     paths:
@@ -166,8 +165,8 @@ binaries:win-x64:
       uploadPlatformDistributable
       --stacktrace
 
-binaries:macos-x64:
-  stage: binaries
+build:macos-x64:
+  stage: build
   interruptible: true
   tags: [ "connect2x-mac" ]
   cache: *build-cache-macos-x64
@@ -175,7 +174,7 @@ binaries:macos-x64:
     - *if-main
     - *if-release
   artifacts:
-    name: binaries
+    name: build
     when: always
     expire_in: 1 day
     paths:
@@ -190,8 +189,8 @@ binaries:macos-x64:
       uploadPlatformDistributable
       --stacktrace
 
-binaries:macos-arm64:
-  stage: binaries
+build:macos-arm64:
+  stage: build
   interruptible: true
   tags: [ "saas-macos-medium-m1" ]
   timeout: 30m
@@ -202,7 +201,7 @@ binaries:macos-arm64:
     - *if-main
     - *if-release
   artifacts:
-    name: binaries
+    name: build
     when: always
     expire_in: 1 day
     paths:
@@ -218,32 +217,30 @@ binaries:macos-arm64:
       uploadPlatformDistributable
       --stacktrace
 
-website:webapp:
+build:prepare-website:
   stage: website
   interruptible: true
   tags: [ "connect2x-linux" ]
   image: $BUILD_LINUX_IMAGE_NAME_BASE
   cache: *build-cache-web
-  needs: [ "binaries:web" ]
   rules:
     - *if-main
     - *if-release
   artifacts:
     paths:
-      - public
       - website/config/_default/params.yaml
       - website/static/fastlane
       - website/static/Tammy-Windows.appinstaller
   script:
     - ./gradlew
-      createWebsite
+      prepareWebsite
       --stacktrace
 
-website:homepage:
+build:website:
   stage: website
   tags: [ "connect2x-linux" ]
   image: registry.gitlab.com/pages/hugo/hugo_extended:latest
-  needs: [ "website:webapp" ]
+  needs: [ "build:prepare-website" ]
   rules:
     - *if-main
     - *if-release
@@ -254,11 +251,11 @@ website:homepage:
     paths:
       - website/public
 
-release:homepage:
+release:website:
   stage: release
   tags: [ "connect2x-linux" ]
   image: ubuntu:latest
-  needs: [ "website:homepage" ]
+  needs: [ "build:website" ]
   rules:
     - *if-main
     - *if-release
@@ -283,7 +280,7 @@ release:webapp:
   stage: release
   tags: [ "connect2x-linux" ]
   image: ubuntu:latest
-  needs: [ "website:webapp" ]
+  needs: [ "build:web" ]
   rules:
     - *if-release
   variables:
@@ -301,19 +298,19 @@ release:webapp:
     - echo $SSH_SERVER_PUBLIC_KEY >> ~/.ssh/known_hosts
     - chmod 644 ~/.ssh/known_hosts
   script:
-    - lftp -e "open sftp://connect2x.de; user $SSH_USER $SSH_PASSWORD_APP; mirror -X .* -X .*/ --reverse --verbose --delete public/ www/; bye"
+    - lftp -e "open sftp://connect2x.de; user $SSH_USER $SSH_PASSWORD_APP; mirror -X .* -X .*/ --reverse --verbose --delete build/compose/binaries/main-release/web www/; bye"
 
 release:playstore-beta:
   stage: release
   interruptible: true
-  needs: [ "binaries:android" ]
+  needs: [ "build:android" ]
   tags: [ "connect2x-linux" ]
   image: $BUILD_LINUX_IMAGE_NAME_FASTLANE
   cache: *build-cache-android
   rules:
     - *if-main
   artifacts:
-    name: binaries
+    name: build
     when: always
     expire_in: 1 day
     paths:
@@ -328,14 +325,14 @@ release:playstore-beta:
 release:playstore:
   stage: release
   interruptible: true
-  needs: [ "binaries:android" ]
+  needs: [ "build:android" ]
   tags: [ "connect2x-linux" ]
   image: $BUILD_LINUX_IMAGE_NAME_FASTLANE
   cache: *build-cache-android
   rules:
     - *if-release
   artifacts:
-    name: binaries
+    name: build
     when: always
     expire_in: 1 day
   before_script:

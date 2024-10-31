@@ -255,7 +255,6 @@ release:website:
   stage: release
   tags: [ "connect2x-linux" ]
   image: ubuntu:latest
-  needs: [ "build:website" ]
   rules:
     - *if-main
     - *if-release
@@ -280,7 +279,6 @@ release:webapp:
   stage: release
   tags: [ "connect2x-linux" ]
   image: ubuntu:latest
-  needs: [ "build:web" ]
   rules:
     - *if-release
   variables:
@@ -303,7 +301,6 @@ release:webapp:
 release:playstore-beta:
   stage: release
   interruptible: true
-  needs: [ "build:android" ]
   tags: [ "connect2x-linux" ]
   image: $BUILD_LINUX_IMAGE_NAME_FASTLANE
   cache: *build-cache-android
@@ -325,7 +322,6 @@ release:playstore-beta:
 release:playstore:
   stage: release
   interruptible: true
-  needs: [ "build:android" ]
   tags: [ "connect2x-linux" ]
   image: $BUILD_LINUX_IMAGE_NAME_FASTLANE
   cache: *build-cache-android

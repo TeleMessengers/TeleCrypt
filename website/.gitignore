@@ -2,6 +2,7 @@
 public/
 resources/_gen/
 config/_default/params.yaml
-static/Tammy-Windows.appinstaller
+static/Tammy-Windows-x64.appinstaller
+static/Tammy-Windows-arm64.appinstaller
 static/fastlane
 .hugo_build.lock

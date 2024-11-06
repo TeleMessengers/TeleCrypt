@@ -32,13 +32,18 @@ repositories {
     mavenLocal()
 }
 
-val rawAppVersion = "1.0.3"
-val appVersion = withVersionSuffix(rawAppVersion)
+val appVersion = libs.versions.appVersion.get()
+val appPublishedVersion = libs.versions.appPublishedVersion.get()
+if (isRelease)
+    require(appVersion == appPublishedVersion) {
+        "when creating a release, the appVersion ($appVersion) must the same as the appPublishedVersion($appPublishedVersion)"
+    }
+val appSuffixedVersion = withVersionSuffix(appVersion)
 val appName = "Tammy"
 val appId = "de.connect2x.tammy"
 
 group = "de.connect2x"
-version = appVersion
+version = appSuffixedVersion
 
 val distributionDir: Provider<Directory> =
     compose.desktop.nativeApplication.distributions.outputBaseDir.map { it.dir("main-release") }
@@ -212,7 +217,7 @@ compose {
                     // TargetFormat.Rpm, // no deeplink support
                 )
                 packageName = appName
-                packageVersion = rawAppVersion
+                packageVersion = appVersion
 
                 linux {
                     iconFile.set(project.file("src/desktopMain/resources/logo.png"))
@@ -270,7 +275,7 @@ android {
         minSdk = libs.versions.androidMinimalSDK.get().toInt()
         targetSdk = libs.versions.androidTargetSDK.get().toInt()
         versionCode = System.getenv("CI_PIPELINE_IID")?.toInt() ?: 1
-        versionName = appVersion
+        versionName = appSuffixedVersion
         applicationId = appId
         setProperty("archivesBaseName", appName)
         resValue("string", "app_name", appName)
@@ -338,14 +343,14 @@ data class Distribution(
     val platform: String,
     val architecture: String,
     val tasks: List<String>,
-    val originalFileName: String = "$appName-$rawAppVersion.$type",
+    val originalFileName: String = "$appName-$appVersion.$type",
 ) {
-    val fileName = "$appName-$platform-$architecture-$rawAppVersion.$type"
+    val fileName = "$appName-$platform-$architecture-$appPublishedVersion.$type"
 
-    fun packageRegistryUrl(raw: Boolean) =
+    fun packageRegistryUrl(published: Boolean) =
         "$gitLabProjectUrl/packages/generic/$appName-$platform-$architecture.$type/" +
-                "${if (raw) rawAppVersion else appVersion}/" +
-                if (raw) fileName else "$appName-$platform-$architecture-$appVersion.$type"
+                "${if (published) appPublishedVersion else appSuffixedVersion}/" +
+                if (published) fileName else "$appName-$platform-$architecture-$appSuffixedVersion.$type"
 }
 
 val distributions = listOf(
@@ -426,7 +431,7 @@ val createMsixManifest by tasks.registering {
                   xmlns:uap10="http://schemas.microsoft.com/appx/manifest/uap/windows10/10"
                   xmlns:rescap="http://schemas.microsoft.com/appx/manifest/foundation/windows10/restrictedcapabilities"
                   IgnorableNamespaces="uap10 rescap">
-                  <Identity Name="$appId" Publisher="$publisherCN" Version="${rawAppVersion.toMsix()}" ProcessorArchitecture="x64" />
+                  <Identity Name="$appId" Publisher="$publisherCN" Version="${appVersion.toMsix()}" ProcessorArchitecture="x64" />
                   <Properties>
                     <DisplayName>$appName</DisplayName>
                     <PublisherDisplayName>$publisherName</PublisherDisplayName>
@@ -643,12 +648,12 @@ fun createWebsiteMsixAppinstaller(architecture: String) {
                         <?xml version="1.0" encoding="utf-8"?>
                         <AppInstaller
                             xmlns="http://schemas.microsoft.com/appx/appinstaller/2018"
-                            Version="${rawAppVersion.toMsix()}"
+                            Version="${appPublishedVersion.toMsix()}"
                             Uri="$websiteBaseUrl/$appinstallerFileName">
                             <MainPackage
                                 Name="$appId"
                                 Publisher="$publisherCN"
-                                Version="${rawAppVersion.toMsix()}"
+                                Version="${appPublishedVersion.toMsix()}"
                                 ProcessorArchitecture="x64"
                                 Uri="$uri" />
                             <UpdateSettings>
@@ -696,7 +701,7 @@ val createGitLabRelease by tasks.registering {
             """
                 {
                     "name": "${distribution.fileName}",
-                    "url": "${distribution.packageRegistryUrl(false)}"
+                    "url": "${distribution.packageRegistryUrl(true)}"
                 }
             """.trimIndent()
 
@@ -710,8 +715,8 @@ val createGitLabRelease by tasks.registering {
                 HttpRequest.BodyPublishers.ofString(
                     """
                         {
-                            "name": "$rawAppVersion",
-                            "tag_name": "v$rawAppVersion",
+                            "name": "$appPublishedVersion",
+                            "tag_name": "v$appPublishedVersion",
                             "assets": {
                                 "links": [
                                     ${distributions.joinToString(",") { assetsLinkJson(it) }}

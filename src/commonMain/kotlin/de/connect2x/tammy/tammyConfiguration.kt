@@ -22,33 +22,37 @@ fun tammyConfiguration(
     imprintUrl = "https://tammy.connect2x.de/en-us/imprint"
     pushUrl = "https://sygnal.demo.timmy-messenger.de/_matrix/push/v1/notify"
     multiProfile = false
-    modules += listOf(
-        composeViewModule(),
-        tammyModule(),
+    modulesFactories += listOf(
+        ::composeViewModule,
+        ::tammyModule,
         // TODO this needs to be removed and fixed, as there is no MatrixMessengerSettingsHolderImpl at MultiMessenger level!
-        platformMatrixMessengerSettingsHolderModule(),
+        ::platformMatrixMessengerSettingsHolderModule,
         // TODO there should be a more clean way for I18n
-        platformGetSystemLangModule(),
-        module {
-            single<Languages> { DefaultLanguages }
-            single<I18n> { object : I18n(get(), get(), get(), get()) {} }
+        ::platformGetSystemLangModule,
+        {
+            module {
+                single<Languages> { DefaultLanguages }
+                single<I18n> { object : I18n(get(), get(), get(), get()) {} }
+            }
         }
     )
     // MatrixMultiMessengerConfiguration flavors
     when (BuildConfig.flavor) {
         Flavor.PROD -> {}
         Flavor.DEV -> {
-            modules += module {
-                val devRootPath = getDevRootPath()
-                if (devRootPath != null) single<RootPath> { devRootPath }
+            modulesFactories += {
+                module {
+                    val devRootPath = getDevRootPath()
+                    if (devRootPath != null) single<RootPath> { devRootPath }
+                }
             }
         }
     }
 
     messengerConfiguration {
-        modules += listOf(
-            composeViewModule(),
-            tammyModule(),
+        modulesFactories += listOf(
+            ::composeViewModule,
+            ::tammyModule,
         )
 
         when (BuildConfig.flavor) {

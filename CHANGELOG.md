@@ -18,6 +18,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ### Fixed
 
 - SSO support in local dev server
+- Fix crash when opening file picker on linux distribution
 
 ### Security
 

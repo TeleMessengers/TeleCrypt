@@ -17,6 +17,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Fixed
 
+- Fixed scaling on mobile devices in web.
+
 ### Security
 
 ## 1.0.4

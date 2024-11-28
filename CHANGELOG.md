@@ -18,6 +18,9 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ### Fixed
 
 - Fixed scaling on mobile devices in web.
+- SSO support in local dev server
+- Fix crash when opening file picker on linux distribution
+- Don't configure devserver in production
 
 ### Security
 

@@ -1,5 +1,5 @@
 [versions]
-appPublishedVersion = "1.0.4" # The current published version of this app
+appPublishedVersion = "1.0.5" # The current published version of this app
 appVersion = "1.0.5" # The next version of this app
 
 kotlin = "2.0.21" # https://github.com/JetBrains/kotlin/releases
@@ -9,7 +9,7 @@ androidCompileSDK = "35"
 androidMinimalSDK = "28"
 androidTargetSDK = "34"
 
-trixnityMessenger = "2.3.7" # https://gitlab.com/connect2x/trixnity-messenger/trixnity-messenger/-/packages
+trixnityMessenger = "2.4.0" # https://gitlab.com/connect2x/trixnity-messenger/trixnity-messenger/-/packages
 
 androidGradle = "8.5.2" # https://developer.android.com/reference/tools/gradle-api
 googleServices = "4.4.2" # https://firebase.google.com/support/release-notes/android
@@ -17,7 +17,7 @@ composeMultiplatform = "1.7.0" # https://github.com/JetBrains/compose-multiplatf
 aboutLibraries = "11.2.3" # https://github.com/mikepenz/AboutLibraries/releases
 downloadGradlePlugin = "5.6.0" # https://github.com/michel-kraemer/gradle-download-task/releases
 copyWebpackPlugin = "12.0.2" # https://github.com/webpack-contrib/copy-webpack-plugin/releases
-logback = "1.5.9" # https://github.com/qos-ch/logback/tags
+logback = "1.5.12" # https://github.com/qos-ch/logback/tags
 slf4j = "2.0.16" # https://github.com/qos-ch/slf4j/tags
 kotlinxCoroutines = "1.9.0" # https://github.com/Kotlin/kotlinx.coroutines/releases
 

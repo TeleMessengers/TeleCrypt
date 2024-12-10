@@ -566,6 +566,8 @@ flatpak {
 
 val flatpakBundleDistribution =  distributions.first { it.type == "flatpak" && it.platform == "Linux" }
 val packageReleaseFlatpakBundle by tasks.registering {
+    group = "compose desktop"
+
     inputs.file(flatpak.bundleFile)
     outputs.file(distributionDir.map { it.file("${flatpakBundleDistribution.type}/${flatpakBundleDistribution.originalFileName}") })
 
@@ -582,6 +584,8 @@ val packageReleaseFlatpakBundle by tasks.registering {
 // This can be built without any flatpak tooling
 val flatpakSourcesDistribution =  distributions.first { it.type == "flatpak-sources.zip" && it.platform == "Linux" }
 val packageReleaseFlatpakSources by tasks.registering {
+    group = "compose desktop"
+
     inputs.file(flatpak.sourcesZip)
     outputs.file(distributionDir.map { it.file("${flatpakSourcesDistribution.type}/${flatpakSourcesDistribution.originalFileName}") })
 

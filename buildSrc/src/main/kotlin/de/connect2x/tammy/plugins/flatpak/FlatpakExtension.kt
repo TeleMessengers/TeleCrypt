@@ -37,9 +37,6 @@ constructor(
             .directoryProperty()
             .convention(projectLayout.projectDirectory.dir(".flatpak-cache"))
 
-    val wrapperScriptName =
-        objectFactory.property<String>().convention(applicationName.map { "$it-wrapped.sh" })
-
     val desktopTemplate = objectFactory.fileProperty()
     val metainfoTemplate = objectFactory.fileProperty()
     val manifestTemplate = objectFactory.fileProperty()
@@ -51,8 +48,6 @@ constructor(
     val publishedVersion = objectFactory.property<String>()
     val homepage = objectFactory.property<String>()
 
-    val needsWrapper = objectFactory.property<Boolean>()
-        .convention(false)
 
     val buildDirectory =
         objectFactory.directoryProperty().convention(projectLayout.buildDirectory.dir("flatpak"))
@@ -61,7 +56,6 @@ constructor(
     private val _repoDirectory = objectFactory.directoryProperty()
     private val _sourcesDirectory = objectFactory.directoryProperty()
     private val _sourcesZip = objectFactory.fileProperty()
-    private val _wrapperScriptFile = objectFactory.fileProperty()
     private val _manifestFile = objectFactory.fileProperty()
     private val _desktopFile = objectFactory.fileProperty()
     private val _metainfoFile = objectFactory.fileProperty()
@@ -71,7 +65,6 @@ constructor(
     val repoDirectory = _repoDirectory as Provider<Directory>
     val sourcesDirectory = _sourcesDirectory as Provider<Directory>
     val sourcesZip = _sourcesZip as Provider<RegularFile>
-    val wrapperScriptFile = _wrapperScriptFile as Provider<RegularFile>
     val manifestFile = _manifestFile as Provider<RegularFile>
     val desktopFile = _desktopFile as Provider<RegularFile>
     val metainfoFile = _metainfoFile as Provider<RegularFile>
@@ -86,7 +79,7 @@ constructor(
         mutableMap.put("DEVELOPER_NAME", developerName)
         mutableMap.put("PUBLISHED_VERSION", publishedVersion)
         mutableMap.put("HOMEPAGE", homepage)
-        mutableMap.put("COMMAND", needsWrapper.flatMap { if (it) wrapperScriptName else applicationName })
+        mutableMap.put("COMMAND", applicationName)
         mutableMap.put("RUNTIME", flatpakRuntime)
         mutableMap.put("SDK", flatpakSdk)
         mutableMap.put("RUNTIME_VERSION", flatpakRuntimeVersion)
@@ -97,22 +90,6 @@ constructor(
             }) // TODO: move this somewhere else for reactivity
 
         return mutableMap
-    }
-
-    internal fun registerWrapperScript() {
-        val flatpakBuildWrapperScript by
-            taskContainer.registering(ShellWrapper::class) {
-                executableName = applicationName
-
-                environment.put(
-                    "TRIXNITY_MESSENGER_ROOT_PATH", applicationName.map { "\$XDG_DATA_HOME/$it" })
-
-                wrapperScript =
-                    buildDirectory.zip(wrapperScriptName) { buildDir, scriptName ->
-                        buildDir.file(scriptName)
-                    }
-            }
-        _wrapperScriptFile.set(flatpakBuildWrapperScript.flatMap { it.wrapperScript })
     }
 
     internal fun registerSetupDependencies() {
@@ -173,7 +150,6 @@ constructor(
 
                 desktop = desktopFile
                 metainfo = metainfoFile
-                wrapper = needsWrapper.flatMap { if (it) wrapperScriptFile else objectFactory.fileProperty() }
                 app = appDistributionDirectory
 
                 destination = buildDirectory.map { it.dir("sources") }

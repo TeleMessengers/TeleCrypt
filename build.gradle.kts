@@ -562,8 +562,6 @@ flatpak {
     developerName = publisherName
     publishedVersion = appVersion
     homepage = "https://tammy.connect2x.de"
-
-    needsWrapper = buildFlavor == BuildFlavor.DEV
 }
 
 val flatpakBundleDistribution =  distributions.first { it.type == "flatpak" && it.platform == "Linux" }

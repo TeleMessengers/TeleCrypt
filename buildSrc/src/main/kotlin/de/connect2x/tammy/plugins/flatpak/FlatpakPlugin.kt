@@ -16,7 +16,6 @@ abstract class FlatpakPlugin : Plugin<Project> {
 
             if (os.isLinux && arch.isAmd64) {
                 with(flatpakExtension) {
-                    registerWrapperScript()
                     registerSetupDependencies()
                     registerExpandMetainfo()
                     registerExpandManifest()

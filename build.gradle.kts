@@ -564,9 +564,10 @@ flatpak {
     homepage = "https://tammy.connect2x.de"
 }
 
+val flatpakBundleDistribution =  distributions.first { it.type == "flatpak" && it.platform == "Linux" }
 val packageReleaseFlatpakBundle by tasks.registering {
     inputs.file(flatpak.bundleFile)
-    outputs.file(distributionDir.map { it.file("flatpak/$appName-$appVersion.flatpak") })
+    outputs.file(distributionDir.map { it.file("${flatpakBundleDistribution.type}/${flatpakBundleDistribution.originalFileName}") })
 
     doLast {
         val bundle = inputs.files.singleFile
@@ -579,9 +580,10 @@ val packageReleaseFlatpakBundle by tasks.registering {
 // The point of this is that one can just import them in the de.connect2x.yml manifest when publishing to flathub
 // The archive contains the structure with all files needed for the flatpak, e.g. metainfo, icons, desktop entry, etc. and can just be
 // This can be built without any flatpak tooling
+val flatpakSourcesDistribution =  distributions.first { it.type == "flatpak-sources.zip" && it.platform == "Linux" }
 val packageReleaseFlatpakSources by tasks.registering {
     inputs.file(flatpak.sourcesZip)
-    outputs.file(distributionDir.map { it.file("flatpak-sources.zip/$appName-$appVersion.flatpak-sources.zip") })
+    outputs.file(distributionDir.map { it.file("${flatpakSourcesDistribution.type}/${flatpakSourcesDistribution.originalFileName}") })
 
     doLast {
         val bundle = inputs.files.singleFile

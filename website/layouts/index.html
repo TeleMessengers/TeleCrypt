@@ -99,6 +99,12 @@
                 </a>
             </div>
             <div class="download-card animated fadeInLeft">
+                <h3>{{ i18n "download.linux.title" }}</h3>
+                <a href="{{ .Site.Params.downloads.TammyLinuxx64flatpak }}" class="download-button">
+                    {{ i18n "download.linux.flatpak" }} (x64)
+                </a>
+            </div>
+            <div class="download-card animated fadeInLeft">
                 <h3>{{ i18n "download.windows.title" }}</h3>
                 <a href="{{ .Site.BaseURL }}Tammy-Windows-x64.appinstaller" class="download-button">
                     {{ i18n "download.windows.appinstaller" }} (x64)
@@ -131,10 +137,6 @@
             <div class="download-card animated fadeInLeft">
                 <h3>{{ i18n "download.ios.title" }}</h3>
                 <p>{{ i18n "download.ios.soon" }}</p>
-            </div>
-            <div class="download-card animated fadeInLeft">
-                <h3>{{ i18n "download.linux.title" }}</h3>
-                <p>{{ i18n "download.linux.soon" }}</p>
             </div>
         </div>
     </section>

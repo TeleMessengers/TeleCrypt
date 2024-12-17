@@ -48,7 +48,7 @@ download:
     zip: ZIP
   linux:
     title: Linux
-    soon: Coming Soon!
+    flatpak: Flatpak
   web:
     title: Web (Beta)
     app: Web App

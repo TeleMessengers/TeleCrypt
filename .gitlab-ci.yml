@@ -147,7 +147,7 @@ build:web:
       uploadWebZipDistributable
       --stacktrace
 
-build:win-x64:
+build:windows-x64:
   stage: build
   interruptible: true
   tags: [ "connect2x-win" ]

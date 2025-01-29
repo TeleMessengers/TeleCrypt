@@ -9,11 +9,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Added
 
-- Show version in 'About Tammy' section
-
 ### Changed
-
-- Upgraded trixnity-messenger to 3.1.0
 
 ### Deprecated
 
@@ -21,9 +17,21 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Fixed
 
-- App starts now when using a11y on Windows
-
 ### Security
+
+## 1.1.0
+
+### Added
+
+- Show version in 'About Tammy' section
+
+### Changed
+
+- Upgraded trixnity-messenger to 3.1.0
+
+### Fixed
+
+- App starts now when using a11y on Windows
 
 ## 1.0.9
 

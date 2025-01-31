@@ -67,6 +67,10 @@ val licenses by tasks.registering(AboutLibrariesTask::class) {
     dependsOn("collectDependencies")
 }
 
+aboutLibraries {
+    configPath = "license-config"
+}
+
 val buildConfigGenerator by tasks.registering {
     val licencesFile = licensesDir.resolve("aboutlibraries.json")
     val generatedSrc = layout.buildDirectory.dir("generated-src/kotlin/")

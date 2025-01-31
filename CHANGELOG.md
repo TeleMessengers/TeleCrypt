@@ -17,9 +17,13 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Fixed
 
-- Fix invalid license entries
-
 ### Security
+
+## 1.1.2
+
+### Changed
+
+- Upgraded trixnity-messenger to 3.2.0
 
 ## 1.1.1
 

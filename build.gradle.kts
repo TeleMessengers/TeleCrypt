@@ -59,7 +59,8 @@ val arch: DefaultArchitecture =
 
 enum class BuildFlavor { PROD, DEV }
 
-val buildFlavor = BuildFlavor.valueOf(System.getenv("TAMMY_BUILD_FLAVOR") ?: if (isCI) "PROD" else "DEV")
+val buildFlavor =
+    BuildFlavor.valueOf(System.getenv("TAMMY_BUILD_FLAVOR") ?: if (isCI) "PROD" else "DEV")
 
 val licensesDir = layout.buildDirectory.dir("generated").get().dir("aboutLibraries").asFile
 val licenses by tasks.registering(AboutLibrariesTask::class) {
@@ -69,6 +70,8 @@ val licenses by tasks.registering(AboutLibrariesTask::class) {
 
 aboutLibraries {
     configPath = "license-config"
+    // Disable this as it causes issues with a custom AboutLibrariesTask
+    registerAndroidTasks = false
 }
 
 val buildConfigGenerator by tasks.registering {
@@ -345,7 +348,8 @@ android {
     }
 }
 
-val gitLabProjectUrl = "${System.getenv("CI_API_V4_URL")}/projects/${System.getenv("CI_PROJECT_ID")}"
+val gitLabProjectUrl =
+    "${System.getenv("CI_API_V4_URL")}/projects/${System.getenv("CI_PROJECT_ID")}"
 
 data class Distribution(
     val type: String,
@@ -429,7 +433,8 @@ val logo44FileName = "logo_44.png"
 val logo155FileName = "logo_155.png"
 
 fun String.toMsix() =
-    substringBefore("-").split(".").map { it.toInt() }.let { (major, minor, patch) -> "$major.0.$minor.$patch" }
+    substringBefore("-").split(".").map { it.toInt() }
+        .let { (major, minor, patch) -> "$major.0.$minor.$patch" }
 
 val msixDistributionDir: Provider<Directory> =
     distributionDir.map { it.dir("msix").also { it.asFile.mkdirs() } }
@@ -521,15 +526,16 @@ val notarizeReleaseMsix by tasks.registering(Exec::class) {
         "sign",
         "/debug",
         "/fd", "sha256", // signature digest algorithm
-        "/tr", System.getenv("WINDOWS_CODE_SIGNING_TIMESTAMP_SERVER"), // timestamp server
-        "/td", "sha256", // timestamp digest algorithm
-        "/sha1", System.getenv("WINDOWS_CODE_SIGNING_THUMBPRINT"), // key selection
-        misxDistribution.originalFileName
+        "/td", "sha256" // timestamp digest algorithm
     )
+    System.getenv("WINDOWS_CODE_SIGNING_TIMESTAMP_SERVER")
+        ?.let { args("/tr", it) } // timestamp server
+    System.getenv("WINDOWS_CODE_SIGNING_THUMBPRINT")
+        ?.let { args("/sha1", it) } // key selection
+    args(misxDistribution.originalFileName)
     dependsOn(packageReleaseMsix)
     onlyIf { os.isWindows && isRelease }
 }
-
 
 // #####################################################################################################################
 // flatpak
@@ -568,7 +574,8 @@ flatpak {
     homepage = "https://tammy.connect2x.de"
 }
 
-val flatpakBundleDistribution = distributions.first { it.type == "flatpak" && it.platform == "Linux" }
+val flatpakBundleDistribution =
+    distributions.first { it.type == "flatpak" && it.platform == "Linux" }
 val packageReleaseFlatpakBundle by tasks.registering {
     group = "compose desktop"
 
@@ -586,7 +593,8 @@ val packageReleaseFlatpakBundle by tasks.registering {
 // The point of this is that one can just import them in the de.connect2x.yml manifest when publishing to flathub
 // The archive contains the structure with all files needed for the flatpak, e.g. metainfo, icons, desktop entry, etc. and can just be
 // This can be built without any flatpak tooling
-val flatpakSourcesDistribution = distributions.first { it.type == "flatpak-sources.zip" && it.platform == "Linux" }
+val flatpakSourcesDistribution =
+    distributions.first { it.type == "flatpak-sources.zip" && it.platform == "Linux" }
 val packageReleaseFlatpakSources by tasks.registering {
     group = "compose desktop"
 
@@ -619,7 +627,8 @@ fun uploadToPackageRegistry(filePath: Path, distribution: Distribution) {
 
 fun uploadDistributableToPackageRegistry(distribution: Distribution) {
     uploadToPackageRegistry(
-        distributionDir.get().file("${distribution.type}/${distribution.originalFileName}").asFile.toPath(),
+        distributionDir.get()
+            .file("${distribution.type}/${distribution.originalFileName}").asFile.toPath(),
         distribution,
     )
 }
@@ -646,7 +655,12 @@ val packageReleasePlatformZip by tasks.creating(Zip::class) {
 
     archiveFileName = platformZipDistribution.originalFileName
     destinationDirectory = zipDistributionDir
-    dependsOn.addAll(listOf("createReleaseDistributable", copyMsixLogos))// copyMsixLogos because of implicit dependency
+    dependsOn.addAll(
+        listOf(
+            "createReleaseDistributable",
+            copyMsixLogos
+        )
+    )// copyMsixLogos because of implicit dependency
 }
 
 val webZipDistribution = distributions.first { it.type == "zip" && it.platform == "Web" }
@@ -669,7 +683,8 @@ val uploadWebZipDistributable by tasks.registering {
 
 val uploadPlatformDistributable by tasks.registering {
     group = "release"
-    val thisDistributions = distributions.filter { it.platform == platformName && it.architecture == architectureName }
+    val thisDistributions =
+        distributions.filter { it.platform == platformName && it.architecture == architectureName }
     doLast {
         thisDistributions.forEach {
             uploadDistributableToPackageRegistry(it)

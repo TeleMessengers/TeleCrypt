@@ -13,7 +13,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Changed
 
-- Upgraded Trixnity Messenger to latest version
+- Upgraded trixnity-messenger to 3.3.0-DEV-36078698
 
 ### Deprecated
 

@@ -19,11 +19,15 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Security
 
-## 1.1.6
+## 1.1.7
 
 ### Changed
 
 - Upgraded trixnity-messenger to 3.4.2
+
+## 1.1.6
+
+Same as 1.1.5.
 
 ## 1.1.5
 

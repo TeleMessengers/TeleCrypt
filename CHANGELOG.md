@@ -11,7 +11,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Changed
 
-- Upgraded trixnity-messenger to 3.5.0
+- Upgraded trixnity-messenger to 3.5.1
 - make imprint and privacy info visible in app
 
 ### Deprecated

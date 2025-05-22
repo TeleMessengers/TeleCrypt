@@ -24,7 +24,7 @@ fun tammyConfiguration(
     pushUrl = "https://sygnal.demo.timmy-messenger.de/_matrix/push/v1/notify"
     multiProfile = false
     modulesFactories += listOf(
-        ::composeViewModule,
+        { composeViewModule(null) },
         ::tammyModule,
         // TODO this needs to be removed and fixed, as there is no MatrixMessengerSettingsHolderImpl at MultiMessenger level!
         ::platformMatrixMessengerSettingsHolderModule,
@@ -52,7 +52,7 @@ fun tammyConfiguration(
 
     messengerConfiguration {
         modulesFactories += listOf(
-            ::composeViewModule,
+            { composeViewModule(this) },
             ::tammyModule,
         )
 

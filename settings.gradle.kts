@@ -58,6 +58,7 @@ dependencyResolutionManagement {
         mavenLocal()
         maven("https://gitlab.com/api/v4/projects/68438621/packages/maven") // c2x Conventions
         maven("https://gitlab.com/api/v4/projects/26519650/packages/maven") // trixnity
+        maven("https://gitlab.com/api/v4/projects/47538655/packages/maven") // trixnity-messenger
         maven("https://gitlab.com/api/v4/projects/58749664/packages/maven") // sysnotify
         maven("https://gitlab.com/api/v4/projects/65998892/packages/maven") // androidx
         maven("https://oss.sonatype.org/content/repositories/snapshots")

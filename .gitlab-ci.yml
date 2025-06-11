@@ -31,41 +31,18 @@ variables:
     when: never
   - if: $CI_COMMIT_BRANCH == $CI_DEFAULT_BRANCH
 
-.build-cache-android: &build-cache-android
-  paths:
-    - $GRADLE_USER_HOME
-    - $KONAN_DATA_DIR
-    - $KOTLIN_DATA_DIR
-
-.build-cache-linux-x64: &build-cache-linux-x64
-  paths:
-    - $GRADLE_USER_HOME
-    - $KONAN_DATA_DIR
-    - $KOTLIN_DATA_DIR
-
-.build-cache-web: &build-cache-web
-  paths:
-    - $GRADLE_USER_HOME
-    - $KONAN_DATA_DIR
-    - $KOTLIN_DATA_DIR
-
-.build-cache-macos-x64: &build-cache-macos-x64
-  paths:
-    - $GRADLE_USER_HOME
-    - $KONAN_DATA_DIR
-    - $KOTLIN_DATA_DIR
-
-.build-cache-macos-arm64: &build-cache-macos-arm64
-  paths:
-    - $GRADLE_USER_HOME
-    - $KONAN_DATA_DIR
-    - $KOTLIN_DATA_DIR
-
-.build-cache-windows-x64: &build-cache-windows-x64
-  paths:
-    - $GRADLE_USER_HOME
-    - $KONAN_DATA_DIR
-    - $KOTLIN_DATA_DIR
+.cache: &cache
+  - key:
+      files:
+        - gradle/wrapper/gradle-wrapper.properties
+        - gradle/libs.versions.toml
+    paths:
+      - $GRADLE_USER_HOME/wrapper
+      - $GRADLE_USER_HOME/nodejs
+      - $GRADLE_USER_HOME/yarn
+      - $GRADLE_USER_HOME/native
+      - $KONAN_DATA_DIR
+      - $KOTLIN_DATA_DIR
 
 changelog:
   stage: changelog
@@ -89,7 +66,7 @@ build:android:
   interruptible: true
   tags: [ "connect2x-linux" ]
   image: $BUILD_LINUX_IMAGE_NAME_BASE
-  cache: *build-cache-android
+  cache: *cache
   rules:
     - *if-main
     - *if-release
@@ -112,7 +89,7 @@ build:linux-x64:
   interruptible: true
   tags: [ "connect2x-linux" ]
   image: $BUILD_LINUX_IMAGE_NAME_PACKAGE
-  cache: *build-cache-linux-x64
+  cache: *cache
   rules:
     - *if-main
     - *if-release
@@ -132,7 +109,7 @@ build:web:
   interruptible: true
   tags: [ "connect2x-linux" ]
   image: $BUILD_LINUX_IMAGE_NAME_BASE
-  cache: *build-cache-web
+  cache: *cache
   rules:
     - *if-main
     - *if-release
@@ -151,7 +128,7 @@ build:windows-x64:
   stage: build
   interruptible: true
   tags: [ "connect2x-win" ]
-  cache: *build-cache-windows-x64
+  cache: *cache
   rules:
     - *if-main
     - *if-release
@@ -170,7 +147,7 @@ build:macos-x64:
   stage: build
   interruptible: true
   tags: [ "connect2x-mac" ]
-  cache: *build-cache-macos-x64
+  cache: *cache
   rules:
     - *if-main
     - *if-release
@@ -197,7 +174,7 @@ build:macos-arm64:
   timeout: 30m
   variables:
     HOMEBREW_NO_AUTO_UPDATE: 1
-  cache: *build-cache-macos-arm64
+  cache: *cache
   rules:
     - *if-main
     - *if-release
@@ -223,7 +200,7 @@ build:prepare-website:
   interruptible: true
   tags: [ "connect2x-linux" ]
   image: $BUILD_LINUX_IMAGE_NAME_BASE
-  cache: *build-cache-web
+  cache: *cache
   rules:
     - *if-main
     - *if-release
@@ -306,7 +283,7 @@ release:playstore-beta:
   interruptible: true
   tags: [ "connect2x-linux" ]
   image: $BUILD_LINUX_IMAGE_NAME_FASTLANE
-  cache: *build-cache-android
+  cache: *cache
   rules:
     - *if-main
   artifacts:
@@ -327,7 +304,7 @@ release:playstore:
   interruptible: true
   tags: [ "connect2x-linux" ]
   image: $BUILD_LINUX_IMAGE_NAME_FASTLANE
-  cache: *build-cache-android
+  cache: *cache
   rules:
     - *if-release
   artifacts:
@@ -344,7 +321,7 @@ release:gitlab:
   stage: release
   tags: [ "connect2x-linux" ]
   image: $BUILD_LINUX_IMAGE_NAME_BASE
-  cache: *build-cache-linux-x64
+  cache: *cache
   rules:
     - *if-release
   script:

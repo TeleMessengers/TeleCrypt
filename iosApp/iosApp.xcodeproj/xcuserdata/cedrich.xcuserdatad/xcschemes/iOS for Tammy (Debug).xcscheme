@@ -1,6 +1,6 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <Scheme
-   version = "1.7">
+   version = "2.2">
    <BuildAction
       parallelizeBuildables = "YES"
       buildImplicitDependencies = "YES">
@@ -15,9 +15,18 @@
                BuildableIdentifier = "primary"
                BlueprintIdentifier = "B9DA97B02DC1472C00A4DA20"
                BuildableName = "Tammy.app"
-               BlueprintName = "iosApp"
+               BlueprintName = "Tammy for iOS"
                ReferencedContainer = "container:iosApp.xcodeproj">
             </BuildableReference>
+         </BuildActionEntry>
+         <BuildActionEntry
+            buildForTesting = "YES"
+            buildForRunning = "NO"
+            buildForProfiling = "NO"
+            buildForArchiving = "YES"
+            buildForAnalyzing = "NO">
+            <AutocreatedTestPlanReference>
+            </AutocreatedTestPlanReference>
          </BuildActionEntry>
       </BuildActionEntries>
    </BuildAction>
@@ -44,7 +53,7 @@
             BuildableIdentifier = "primary"
             BlueprintIdentifier = "B9DA97B02DC1472C00A4DA20"
             BuildableName = "Tammy.app"
-            BlueprintName = "iosApp"
+            BlueprintName = "Tammy for iOS"
             ReferencedContainer = "container:iosApp.xcodeproj">
          </BuildableReference>
       </BuildableProductRunnable>
@@ -55,12 +64,21 @@
       savedToolIdentifier = ""
       useCustomWorkingDirectory = "NO"
       debugDocumentVersioning = "YES">
+      <MacroExpansion>
+         <BuildableReference
+            BuildableIdentifier = "primary"
+            BlueprintIdentifier = "B9DA97B02DC1472C00A4DA20"
+            BuildableName = "Tammy.app"
+            BlueprintName = "Tammy for iOS"
+            ReferencedContainer = "container:iosApp.xcodeproj">
+         </BuildableReference>
+      </MacroExpansion>
    </ProfileAction>
    <AnalyzeAction
       buildConfiguration = "Debug">
    </AnalyzeAction>
    <ArchiveAction
       buildConfiguration = "Release"
-      revealArchiveInOrganizer = "YES">
+      revealArchiveInOrganizer = "NO">
    </ArchiveAction>
 </Scheme>

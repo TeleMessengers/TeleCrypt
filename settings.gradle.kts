@@ -65,8 +65,14 @@ dependencyResolutionManagement {
         maven("https://oss.sonatype.org/content/repositories/snapshots")
         google()
     }
+
+    versionCatalogs {
+        create("sharedLibs") {
+            from("de.connect2x.conventions:c2x-shared-catalog:50375801")
+        }
+    }
 }
 
 plugins {
-    id("org.gradle.toolchains.foojay-resolver-convention") version "0.10.0"
+    id("org.gradle.toolchains.foojay-resolver-convention") version "1.0.0"
 }

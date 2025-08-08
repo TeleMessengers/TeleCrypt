@@ -9,17 +9,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Added
 
-- System notifications on Android, iOS, Linux, Windows, macOS and Web
-- Support for running on iOS devices
-
 ### Changed
-
-- Upgraded trixnity-messenger to 3.6.18
-- Upgraded Gradle from 8.14 to 8.14.3
-- Downgraded Java to 17
-- Desktop distribution now uses Temurin 24
-- Bump c2x Conventions to 50375801
-- Let Foojay download distribution JDK for 100% reproducible builds
 
 ### Deprecated
 
@@ -27,9 +17,27 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Fixed
 
-- Added Gradle distribution hash to wrapper properties
-
 ### Security
+
+## 1.1.22
+
+### Added
+
+- System notifications on Android, iOS, Linux, Windows, macOS and Web
+- Support for running on iOS devices
+
+### Changed
+
+- Upgraded trixnity-messenger to 3.7.0
+- Upgraded Gradle from 8.14 to 8.14.3
+- Downgraded Java to 17
+- Desktop distribution now uses Temurin 24
+- Bump c2x Conventions to 50375801
+- Let Foojay download distribution JDK for 100% reproducible builds
+
+### Fixed
+
+- Added Gradle distribution hash to wrapper properties
 
 ## 1.1.21
 

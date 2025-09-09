@@ -126,6 +126,7 @@ kotlin {
     listOf(iosX64(), iosArm64(), iosSimulatorArm64()).forEach { target ->
         target.binaries.framework {
             export(sharedLibs.essenty.lifecycle)
+            export(libs.trixnity.messenger.view)
             baseName = "TammyUI"
             isStatic = true
         }
@@ -137,8 +138,8 @@ kotlin {
         }
         commonMain {
             dependencies {
+                api(libs.trixnity.messenger.view)
                 implementation(libs.trixnity.messenger)
-                implementation(libs.trixnity.messenger.view)
                 implementation(compose.components.resources)
             }
             //kotlin.srcDir(buildConfigGenerator.map { it.outputs })

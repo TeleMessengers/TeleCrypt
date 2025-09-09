@@ -9,6 +9,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Added
 
+- Support for push notifications on iOS
+
 ### Changed
 
 - Upgraded Trixnity Messenger to 3.8.3-DEV-52839608
@@ -18,6 +20,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ### Removed
 
 ### Fixed
+
+- SSO Login redirect to App on iOS
 
 ### Security
 

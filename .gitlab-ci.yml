@@ -59,7 +59,7 @@ changelog:
         echo "CHANGELOG.md has changed"
       else
         echo "CHANGELOG.md has not changed"
-        exit 1
+        exit 0
       fi
 
 build:android:

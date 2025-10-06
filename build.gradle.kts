@@ -196,6 +196,8 @@ kotlin {
 
 dependencies {
     androidTestImplementation(libs.screengrab)
+    androidTestImplementation(sharedLibs.compose.ui.test.junit4.android)
+    debugImplementation(sharedLibs.compose.ui.test.android.manifest)
 }
 
 val distributionJavaHome = System.getenv("DIST_JAVA_HOME") ?: javaToolchains.launcherFor {

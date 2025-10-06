@@ -24,8 +24,8 @@
         </encoder>
     </appender>
 
-    <logger name="net.folivo.trixnity" level="INFO"/>
-    <logger name="de.connect2x" level="INFO"/>
+    <logger name="net.folivo.trixnity" level="DEBUG"/>
+    <logger name="de.connect2x" level="DEBUG"/>
 
     <root level="INFO">
         <appender-ref ref="logcat"/>

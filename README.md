@@ -45,6 +45,12 @@ working on it.
 When running locally, you must set `TAMMY_BUILD_FLAVOR` to `PROD` (e.g. by prepending `TAMMY_BUILD_FLAVOR=PROD` to each
 command).
 
+Install fastlane by installing ruby and running:
+
+```bash
+bundle update
+```
+
 ### Create screenshots
 
 Create new screenshots for the App.
@@ -52,7 +58,11 @@ Create new screenshots for the App.
 When using a Mac, you may do first (this needs Android SDK command line tools to be installed):
 
 ```bash
+# macOS
 export PATH="$PATH:$HOME/Library/Android/sdk/emulator:$HOME/Library/Android/sdk/tools:$HOME/Library/Android/sdk/cmdline-tools/latest/bin/"
+
+# linux
+export PATH="$PATH:$HOME/Android/Sdk/emulator:$HOME/Library/Android/sdk/tools:$HOME/Android/Sdk/cmdline-tools/latest/bin/"
 ```
 
 After that you can start the emulators:
@@ -64,7 +74,7 @@ After that you can start the emulators:
 And create screenshots:
 
 ```bash
-TAMMY_BUILD_FLAVOR=PROD fastlane android screenshots
+TAMMY_BUILD_FLAVOR=PROD bundle exec fastlane android screenshots
 ```
 
 After that you can stop the first script and delete the emulators:

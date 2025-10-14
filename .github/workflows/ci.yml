@@ -1,0 +1,284 @@
+name: TeleCrypt CI
+
+on:
+  push:
+    branches:
+      - main
+  pull_request:
+  workflow_dispatch:
+
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
+permissions:
+  contents: read
+
+env:
+  GRADLE_OPTS: -Dorg.gradle.daemon=false
+  GRADLE_USER_HOME: ${{ github.workspace }}/.gradle
+  KONAN_DATA_DIR: ${{ github.workspace }}/.konan
+  KOTLIN_DATA_DIR: ${{ github.workspace }}/.kotlin
+  ANDROID_RELEASE_STORE_FILE_BASE64: ${{ secrets.ANDROID_RELEASE_STORE_FILE_BASE64 }}
+  ANDROID_RELEASE_STORE_PASSWORD: ${{ secrets.ANDROID_RELEASE_STORE_PASSWORD }}
+  ANDROID_RELEASE_KEY_ALIAS: ${{ secrets.ANDROID_RELEASE_KEY_ALIAS }}
+  ANDROID_RELEASE_KEY_PASSWORD: ${{ secrets.ANDROID_RELEASE_KEY_PASSWORD }}
+  ANDROID_SERVICE_ACCOUNT_JSON_BASE64: ${{ secrets.ANDROID_SERVICE_ACCOUNT_JSON_BASE64 }}
+  APPLE_KEYCHAIN_FILE_BASE64: ${{ secrets.APPLE_KEYCHAIN_FILE_BASE64 }}
+  APPLE_KEYCHAIN_PASSWORD: ${{ secrets.APPLE_KEYCHAIN_PASSWORD }}
+  APPLE_TEAM_ID: ${{ secrets.APPLE_TEAM_ID }}
+  APPLE_ID: ${{ secrets.APPLE_ID }}
+  APPLE_NOTARIZATION_PASSWORD: ${{ secrets.APPLE_NOTARIZATION_PASSWORD }}
+  WINDOWS_CODE_SIGNING_TIMESTAMP_SERVER: ${{ secrets.WINDOWS_CODE_SIGNING_TIMESTAMP_SERVER }}
+  WINDOWS_CODE_SIGNING_THUMBPRINT: ${{ secrets.WINDOWS_CODE_SIGNING_THUMBPRINT }}
+  ENABLE_IOS_BUILD: ${{ secrets.ENABLE_IOS_BUILD }}
+
+jobs:
+  android:
+    name: Android Release Build
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Setup Java
+        uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: 21
+
+      - name: Setup Gradle
+        uses: gradle/actions/setup-gradle@v3
+
+      - name: Configure Android SDK
+        uses: android-actions/setup-android@v3
+        with:
+          packages: |
+            platform-tools
+            platforms;android-35
+            build-tools;35.0.0
+
+      - name: Cache Kotlin Native
+        uses: actions/cache@v4
+        with:
+          path: |
+            .konan
+            .kotlin
+          key: ${{ runner.os }}-konan-${{ hashFiles('gradle/libs.versions.toml') }}
+          restore-keys: |
+            ${{ runner.os }}-konan-
+
+      - name: Apply branding
+        run: tools/brandify.sh branding/branding.json
+
+      - name: Prepare signing keystore
+        if: env.ANDROID_RELEASE_STORE_FILE_BASE64 != ''
+        run: |
+          echo "$ANDROID_RELEASE_STORE_FILE_BASE64" | base64 --decode > android_keystore.jks
+
+      - name: Assemble Android artifacts
+        run: ./gradlew --stacktrace bundleRelease assembleRelease
+
+      - name: Upload Android artifacts
+        uses: actions/upload-artifact@v4
+        with:
+          name: android-artifacts
+          path: |
+            build/outputs/apk/release/*.apk
+            build/outputs/bundle/release/*.aab
+
+  desktop_linux:
+    name: Desktop & Web (Linux)
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Setup Java
+        uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: 21
+
+      - name: Setup Gradle
+        uses: gradle/actions/setup-gradle@v3
+
+      - name: Install system dependencies
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y flatpak zip
+
+      - name: Cache Kotlin Native
+        uses: actions/cache@v4
+        with:
+          path: |
+            .konan
+            .kotlin
+          key: ${{ runner.os }}-konan-${{ hashFiles('gradle/libs.versions.toml') }}
+          restore-keys: |
+            ${{ runner.os }}-konan-
+
+      - name: Apply branding
+        run: tools/brandify.sh branding/branding.json
+
+      - name: Build desktop and web distributions (Linux)
+        run: ./gradlew --stacktrace createReleaseDistributable packageReleasePlatformZip packageReleaseWebZip
+
+      - name: Upload Linux desktop artifacts
+        uses: actions/upload-artifact@v4
+        with:
+          name: desktop-linux-artifacts
+          path: build/compose/binaries/main-release/**
+
+      - name: Upload web artifacts
+        uses: actions/upload-artifact@v4
+        with:
+          name: web-artifacts
+          path: build/compose/binaries/main-release/zip/*.zip
+
+  desktop_windows:
+    name: Desktop (Windows)
+    runs-on: windows-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Setup Java
+        uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: 21
+
+      - name: Setup Gradle
+        uses: gradle/actions/setup-gradle@v3
+
+      - name: Cache Kotlin Native
+        uses: actions/cache@v4
+        with:
+          path: |
+            .konan
+            .kotlin
+          key: ${{ runner.os }}-konan-${{ hashFiles('gradle/libs.versions.toml') }}
+          restore-keys: |
+            ${{ runner.os }}-konan-
+
+      - name: Apply branding
+        shell: bash
+        run: tools/brandify.sh branding/branding.json
+
+      - name: Build desktop distributions (Windows)
+        shell: bash
+        run: ./gradlew --stacktrace createReleaseDistributable packageReleasePlatformZip
+
+      - name: Upload Windows desktop artifacts
+        uses: actions/upload-artifact@v4
+        with:
+          name: desktop-windows-artifacts
+          path: build/compose/binaries/main-release/**
+
+  desktop_macos:
+    name: Desktop (macOS)
+    runs-on: macos-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Setup Java
+        uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: 21
+
+      - name: Setup Gradle
+        uses: gradle/actions/setup-gradle@v3
+
+      - name: Cache Kotlin Native
+        uses: actions/cache@v4
+        with:
+          path: |
+            .konan
+            .kotlin
+          key: ${{ runner.os }}-konan-${{ hashFiles('gradle/libs.versions.toml') }}
+          restore-keys: |
+            ${{ runner.os }}-konan-
+
+      - name: Apply branding
+        run: tools/brandify.sh branding/branding.json
+
+      - name: Configure signing keychain
+        if: env.APPLE_KEYCHAIN_FILE_BASE64 != ''
+        run: |
+          echo "$APPLE_KEYCHAIN_FILE_BASE64" | base64 --decode > apple_keychain.keychain
+          security list-keychains -d user -s "$(realpath apple_keychain.keychain)"
+          security unlock-keychain -p "$APPLE_KEYCHAIN_PASSWORD" "$(realpath apple_keychain.keychain)"
+          security set-keychain-settings -t 600 "$(realpath apple_keychain.keychain)"
+
+      - name: Build desktop distributions (macOS)
+        run: ./gradlew --stacktrace createReleaseDistributable packageReleasePlatformZip packageReleaseDmg
+
+      - name: Upload macOS desktop artifacts
+        uses: actions/upload-artifact@v4
+        with:
+          name: desktop-macos-artifacts
+          path: build/compose/binaries/main-release/**
+
+  ios:
+    name: iOS Archive
+    runs-on: macos-latest
+    needs: desktop_macos
+    if: env.ENABLE_IOS_BUILD == 'true'
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Setup Java
+        uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: 21
+
+      - name: Setup Gradle
+        uses: gradle/actions/setup-gradle@v3
+
+      - name: Cache Kotlin Native
+        uses: actions/cache@v4
+        with:
+          path: |
+            .konan
+            .kotlin
+          key: ${{ runner.os }}-konan-${{ hashFiles('gradle/libs.versions.toml') }}
+          restore-keys: |
+            ${{ runner.os }}-konan-
+
+      - name: Apply branding
+        run: tools/brandify.sh branding/branding.json
+
+      - name: Configure signing keychain
+        if: env.APPLE_KEYCHAIN_FILE_BASE64 != ''
+        run: |
+          echo "$APPLE_KEYCHAIN_FILE_BASE64" | base64 --decode > apple_keychain.keychain
+          security list-keychains -d user -s "$(realpath apple_keychain.keychain)"
+          security unlock-keychain -p "$APPLE_KEYCHAIN_PASSWORD" "$(realpath apple_keychain.keychain)"
+          security set-keychain-settings -t 600 "$(realpath apple_keychain.keychain)"
+
+      - name: Create iOS archive
+        run: |
+          cd iosApp
+          xcodebuild -workspace iosApp.xcworkspace -scheme "Tammy for iOS" -configuration Release -archivePath build/TeleCrypt.xcarchive archive
+
+      - name: Upload iOS artifacts
+        uses: actions/upload-artifact@v4
+        with:
+          name: ios-artifacts
+          path: |
+            iosApp/build/TeleCrypt.xcarchive

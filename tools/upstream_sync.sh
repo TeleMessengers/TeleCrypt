@@ -7,6 +7,8 @@ UPSTREAM_URL="${UPSTREAM_URL:-https://gitlab.com/connect2x/tammy.git}"
 BRANDING_CONFIG="${BRANDING_CONFIG:-branding/branding.json}"
 BRANDIFY_SCRIPT="${BRANDIFY_SCRIPT:-tools/brandify.sh}"
 PUSH_UPDATES="${PUSH_UPDATES:-true}"
+AUTO_COMMIT="${AUTO_COMMIT:-true}"
+BRANDING_COMMIT_MESSAGE="${BRANDING_COMMIT_MESSAGE:-chore: apply TeleCrypt branding}"
 
 info() {
   printf '[upstream_sync] %s\n' "$*"
@@ -46,7 +48,19 @@ if [[ -n "$(git status --porcelain)" ]]; then
 fi
 
 info "fast-forward merging $UPSTREAM_REMOTE/$DEFAULT_BRANCH into $DEFAULT_BRANCH"
-git merge --ff-only "$UPSTREAM_REMOTE/$DEFAULT_BRANCH"
+rebased=false
+if git merge --ff-only "$UPSTREAM_REMOTE/$DEFAULT_BRANCH"; then
+  info "fast-forward successful"
+else
+  info "fast-forward not possible, attempting rebase onto $UPSTREAM_REMOTE/$DEFAULT_BRANCH"
+  if git rebase "$UPSTREAM_REMOTE/$DEFAULT_BRANCH"; then
+    rebased=true
+    info "rebase completed successfully"
+  else
+    git rebase --abort || true
+    abort "rebase failed; resolve conflicts manually and rerun"
+  fi
+fi
 
 if [[ -x "$BRANDIFY_SCRIPT" && -f "$BRANDING_CONFIG" ]]; then
   info "reapplying branding via $BRANDIFY_SCRIPT"
@@ -56,15 +70,26 @@ else
 fi
 
 if [[ -n "$(git status --porcelain)" ]]; then
-  info "changes after sync:"
-  git status -sb
+  if [[ "${AUTO_COMMIT,,}" == "true" ]]; then
+    info "branding produced changes; committing"
+    git add -A
+    git commit -m "$BRANDING_COMMIT_MESSAGE"
+    git status -sb
+  else
+    info "changes after sync:"
+    git status -sb
+  fi
 else
   info "no changes detected after sync"
 fi
 
 if [[ "${PUSH_UPDATES,,}" == "true" ]]; then
   info "pushing $DEFAULT_BRANCH to origin"
-  git push origin "$DEFAULT_BRANCH"
+  if [[ "$rebased" == true ]]; then
+    git push --force-with-lease origin "$DEFAULT_BRANCH"
+  else
+    git push origin "$DEFAULT_BRANCH"
+  fi
 else
   info "PUSH_UPDATES=$PUSH_UPDATES, skipping git push"
 fi

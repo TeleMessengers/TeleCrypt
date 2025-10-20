@@ -1,6 +1,7 @@
 require 'fileutils'
 require 'tmpdir'
 require 'base64'
+require 'shellwords'
 
 default_platform(:ios)
 
@@ -75,6 +76,9 @@ platform :ios do
     )
     install_provisioning_profile(path: provisioning_path)
     profile = FastlaneCore::ProvisioningProfile.parse(provisioning_path)
+    profile_name = profile["Name"]
+    bundle_identifier = profile["Entitlements"]["application-identifier"].split('.', 2).last
+    UI.message("Using provisioning profile '#{profile_name}' for #{bundle_identifier}")
 
     ipa_path = build_app(
       project: "iosApp/iosApp.xcodeproj",
@@ -88,9 +92,16 @@ platform :ios do
       build_path: "iosApp/build",
       derived_data_path: "iosApp/build/DerivedData",
       configuration: "Release",
+      codesigning_identity: "Apple Distribution",
+      export_team_id: ENV["APPLE_TEAM_ID"],
+      xcargs: [
+        "CODE_SIGN_STYLE=Manual",
+        "CODE_SIGN_IDENTITY='Apple Distribution'",
+        "PROVISIONING_PROFILE_SPECIFIER=#{Shellwords.escape(profile_name)}"
+      ].join(" "),
       export_options: {
         provisioningProfiles: {
-          profile["Entitlements"]["application-identifier"].split('.', 2).last => profile["Name"]
+          bundle_identifier => profile_name
         },
         signingStyle: "manual",
         signingCertificate: "Apple Distribution"

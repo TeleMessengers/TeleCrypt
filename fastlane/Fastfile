@@ -86,7 +86,7 @@ platform :ios do
       configuration: "Release",
       export_options: {
         provisioningProfiles: {
-          profile.bundle_id => profile.name
+          profile["Entitlements"]["application-identifier"].split('.', 2).last => profile["Name"]
         },
         signingStyle: "manual",
         signingCertificate: "Apple Distribution"

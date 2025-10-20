@@ -25,7 +25,7 @@ platform :ios do
     UI.user_error!("APP_STORE_CONNECT_KEY_ID is missing") if key_id.to_s.empty?
     UI.user_error!("APP_STORE_CONNECT_ISSUER_ID is missing") if issuer_id.to_s.empty?
     UI.user_error!("APP_STORE_CONNECT_API_KEY is missing") if api_key_content.to_s.empty?
-    keychain_password = ENV.fetch("APPLE_KEYCHAIN_PASSWORD")
+    keychain_password = ENV.fetch("APPLE_KEYCHAIN_PASSWORD").to_s.strip
     mobileprovision_base64 = ENV.fetch("IOS_MOBILEPROVISION_BASE64")
 
     unless api_key_content.include?("BEGIN PRIVATE KEY")
@@ -48,8 +48,10 @@ platform :ios do
     certificate_path = File.join(Dir.tmpdir, "telecrypt_ios.p12")
     provisioning_path = File.join(Dir.tmpdir, "telecrypt.mobileprovision")
 
-    File.binwrite(certificate_path, Base64.decode64(ENV.fetch("APPLE_KEYCHAIN_FILE_BASE64")))
-    File.binwrite(provisioning_path, Base64.decode64(mobileprovision_base64))
+    clean_cert = ENV.fetch("APPLE_KEYCHAIN_FILE_BASE64").to_s.gsub(/\s+/, "")
+    clean_profile = mobileprovision_base64.to_s.gsub(/\s+/, "")
+    File.binwrite(certificate_path, Base64.decode64(clean_cert))
+    File.binwrite(provisioning_path, Base64.decode64(clean_profile))
 
     begin
       delete_keychain(name: keychain_name)
@@ -81,7 +83,6 @@ platform :ios do
       output_directory: "iosApp/build",
       output_name: "TeleCrypt",
       archive_path: "iosApp/build/TeleCrypt.xcarchive",
-      api_key: api_key,
       clean: true,
       silent: true,
       build_path: "iosApp/build",

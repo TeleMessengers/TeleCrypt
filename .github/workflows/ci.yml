@@ -32,6 +32,8 @@ env:
   APPLE_NOTARIZATION_PASSWORD: ${{ secrets.APPLE_NOTARIZATION_PASSWORD }}
   WINDOWS_CODE_SIGNING_TIMESTAMP_SERVER: ${{ secrets.WINDOWS_CODE_SIGNING_TIMESTAMP_SERVER }}
   WINDOWS_CODE_SIGNING_THUMBPRINT: ${{ secrets.WINDOWS_CODE_SIGNING_THUMBPRINT }}
+  WINDOWS_CERT_FILE_BASE64: ${{secrets.WINDOWS_CERT_FILE_BASE64 || ''}}
+  WINDOWS_CERT_PASSWORD: ${{ secrets.WINDOWS_CERT_PASSWORD || ''}}
   APP_STORE_CONNECT_API_KEY: ${{ secrets.APP_STORE_CONNECT_API_KEY || '' }}
   APP_STORE_CONNECT_KEY_ID: ${{ secrets.APP_STORE_CONNECT_KEY_ID || secrets.KEY_ID || '' }}
   APP_STORE_CONNECT_ISSUER_ID: ${{ secrets.APP_STORE_CONNECT_ISSUER_ID || secrets.ISSUER_ID || '' }}
@@ -209,6 +211,14 @@ jobs:
         shell: bash
         run: ./gradlew --stacktrace createReleaseDistributable packageReleasePlatformZip
 
+      - name: Sign binaries
+        if: env.WINDOWS_CERT_FILE_BASE64 != ''
+        run: |
+          echo "$WINDOWS_CERT_FILE_BASE64" | base64 --decode > cert.pfx
+          signtool sign /f cert.pfx /p "$WINDOWS_CERT_PASSWORD" \
+            /tr "$WINDOWS_CODE_SIGNING_TIMESTAMP_SERVER" /td sha256 /fd sha256 \
+            build/compose/binaries/main-release/*.exe
+
       - name: Upload Windows desktop artifacts
         uses: actions/upload-artifact@v4
         with:
@@ -259,7 +269,7 @@ jobs:
   ios:
     name: iOS Archive
     runs-on: macos-latest
-    needs: [setup, desktop_macos]
+    needs: [ setup, desktop_macos ]
     steps:
       - name: Checkout
         uses: actions/checkout@v4

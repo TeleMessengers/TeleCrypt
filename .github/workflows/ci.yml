@@ -183,8 +183,9 @@ jobs:
         run: choco install windows-adk -y
 
       - name: Check makeappx (debug purpose only)
+        shell: cmd
         run: |
-          where makeappx.exe || echo "makeappx not found"
+          where makeappx.exe
 
       - name: Checkout
         uses: actions/checkout@v4

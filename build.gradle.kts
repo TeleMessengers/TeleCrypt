@@ -624,6 +624,11 @@ val packageReleaseFlatpakSources by tasks.registering {
 // #####################################################################################################################
 
 fun uploadToPackageRegistry(filePath: Path, distribution: Distribution) {
+    val url = distribution.packageRegistryUrl(false)
+    if (url.contains("null")) {
+        println("⚠️ Package upload skipped: CI variables not set for GitHub Actions.")
+        return
+    }
     val httpClient = HttpClient.newHttpClient()
     val request = HttpRequest.newBuilder()
         .uri(URI.create(distribution.packageRegistryUrl(false)))

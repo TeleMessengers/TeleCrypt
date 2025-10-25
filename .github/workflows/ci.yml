@@ -252,17 +252,17 @@ jobs:
             /tr "$WINDOWS_CODE_SIGNING_TIMESTAMP_SERVER" /td sha256 /fd sha256 \
             build/compose/binaries/main-release/*.exe
 
-      - name: Upload Windows EXE installer
-        uses: actions/upload-artifact@v4
-        with:
-          name: windows-exe-installer
-          path: build/compose/binaries/main-release/exe/*.exe
+#      - name: Upload Windows EXE installer
+#        uses: actions/upload-artifact@v4
+#        with:
+#          name: windows-exe-installer
+#          path: build/compose/binaries/main-release/exe/*.exe
 
-      - name: Upload Windows ZIP archive
+      - name: Upload Windows MSIX installer
         uses: actions/upload-artifact@v4
         with:
-          name: windows-zip-archive
-          path: build/compose/binaries/main-release/zip/*.zip
+          name: windows-msix-installer
+          path: build/compose/binaries/main-release/*.msix
 
   desktop_macos:
     name: Desktop (macOS)

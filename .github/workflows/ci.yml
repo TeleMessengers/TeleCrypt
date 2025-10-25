@@ -247,6 +247,7 @@ jobs:
         shell: pwsh
         run: |
           $certPath = "cert.pfx"
+          $timestampServer = "http://timestamp.sectigo.com"
           [IO.File]::WriteAllBytes($certPath, [Convert]::FromBase64String($env:WINDOWS_CERT_FILE_BASE64))
 
           $files = Get-ChildItem "build/compose/binaries/main-release" -Recurse -Include *.msix
@@ -258,7 +259,7 @@ jobs:
           foreach ($file in $files) {
             Write-Host "Signing $($file.FullName)..."
             & signtool sign /f $certPath /p $env:WINDOWS_CERT_PASSWORD `
-              /tr $env:WINDOWS_CODE_SIGNING_TIMESTAMP_SERVER /td sha256 /fd sha256 `
+              /tr $timestampServer /td sha256 /fd sha256 `
               "$($file.FullName)"
 
             if ($LASTEXITCODE -ne 0) {

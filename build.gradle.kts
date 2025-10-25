@@ -528,8 +528,15 @@ val notarizeReleaseMsix by tasks.registering(Exec::class) {
     )
     System.getenv("WINDOWS_CODE_SIGNING_TIMESTAMP_SERVER")
         ?.let { args("/tr", it) } // timestamp server
-    System.getenv("WINDOWS_CODE_SIGNING_THUMBPRINT")
-        ?.let { args("/sha1", it) } // key selection
+    val certFile = project.layout.buildDirectory.file("cert.pfx").get().asFile
+
+    if (certFile.exists()) {
+        args("/f", certFile.absolutePath)
+        System.getenv("WINDOWS_CERT_PASSWORD")?.let { args("/p", it) }
+    } else {
+        logger.warn("Certificate file ${certFile.absolutePath} not found — MSIX won't be signed")
+    }
+
     args(misxDistribution.originalFileName)
     dependsOn(packageReleaseMsix)
     onlyIf { os.isWindows && isRelease }

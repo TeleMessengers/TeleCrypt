@@ -219,7 +219,7 @@ compose {
             nativeDistributions {
                 modules("java.net.http", "java.sql", "java.naming", "jdk.accessibility")
                 targetFormats(
-                    // TargetFormat.Exe, // no deeplink support
+                    //TargetFormat.Exe, // no deeplink support
                     // TargetFormat.Msi, // no deeplink support
                     TargetFormat.Dmg,
                     // TargetFormat.Pkg, // signing problems
@@ -288,7 +288,7 @@ android {
         // Auto-increment versionCode in CI: prefer GitHub run number, then GitLab pipeline IID, else 1
         versionCode = System.getenv("GITHUB_RUN_NUMBER")?.toInt()
             ?: System.getenv("CI_PIPELINE_IID")?.toInt()
-            ?: 1
+                    ?: 1
         versionName = appSuffixedVersion
         applicationId = appIdentifier
         setProperty("archivesBaseName", appName)
@@ -528,8 +528,15 @@ val notarizeReleaseMsix by tasks.registering(Exec::class) {
     )
     System.getenv("WINDOWS_CODE_SIGNING_TIMESTAMP_SERVER")
         ?.let { args("/tr", it) } // timestamp server
-    System.getenv("WINDOWS_CODE_SIGNING_THUMBPRINT")
-        ?.let { args("/sha1", it) } // key selection
+    val certFile = project.layout.buildDirectory.file("cert.pfx").get().asFile
+
+    if (certFile.exists()) {
+        args("/f", certFile.absolutePath)
+        System.getenv("WINDOWS_CERT_PASSWORD")?.let { args("/p", it) }
+    } else {
+        logger.warn("Certificate file ${certFile.absolutePath} not found — MSIX won't be signed")
+    }
+
     args(misxDistribution.originalFileName)
     dependsOn(packageReleaseMsix)
     onlyIf { os.isWindows && isRelease }
@@ -624,6 +631,11 @@ val packageReleaseFlatpakSources by tasks.registering {
 // #####################################################################################################################
 
 fun uploadToPackageRegistry(filePath: Path, distribution: Distribution) {
+    // Some deprecated method form Tammy Gitlab CI.
+    val url = distribution.packageRegistryUrl(false)
+    if (url.contains("null")) {
+        return
+    }
     val httpClient = HttpClient.newHttpClient()
     val request = HttpRequest.newBuilder()
         .uri(URI.create(distribution.packageRegistryUrl(false)))

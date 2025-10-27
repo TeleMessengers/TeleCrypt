@@ -32,6 +32,8 @@ env:
   APPLE_NOTARIZATION_PASSWORD: ${{ secrets.APPLE_NOTARIZATION_PASSWORD }}
   WINDOWS_CODE_SIGNING_TIMESTAMP_SERVER: ${{ secrets.WINDOWS_CODE_SIGNING_TIMESTAMP_SERVER }}
   WINDOWS_CODE_SIGNING_THUMBPRINT: ${{ secrets.WINDOWS_CODE_SIGNING_THUMBPRINT }}
+  WINDOWS_CERT_FILE_BASE64: ${{secrets.WINDOWS_CERT_FILE_BASE64 || ''}}
+  WINDOWS_CERT_PASSWORD: ${{ secrets.WINDOWS_CERT_PASSWORD || ''}}
   APP_STORE_CONNECT_API_KEY: ${{ secrets.APP_STORE_CONNECT_API_KEY || '' }}
   APP_STORE_CONNECT_KEY_ID: ${{ secrets.APP_STORE_CONNECT_KEY_ID || secrets.KEY_ID || '' }}
   APP_STORE_CONNECT_ISSUER_ID: ${{ secrets.APP_STORE_CONNECT_ISSUER_ID || secrets.ISSUER_ID || '' }}
@@ -177,6 +179,38 @@ jobs:
     runs-on: windows-latest
     needs: setup
     steps:
+      - name: Install Windows SDK and locate makeappx.exe
+        shell: pwsh
+        run: |
+          $installDir = "C:\Tools\WindowsSDK"
+          New-Item -ItemType Directory -Force -Path $installDir | Out-Null
+
+          $env:ChocolateyInstallArguments = "/quiet /norestart /features OptionId.DeploymentTools /installpath=$installDir"
+
+          choco install windows-sdk-10-version-2004-all -y --no-progress
+
+          $makeappx = Get-ChildItem -Recurse -Path $installDir -Filter makeappx.exe -ErrorAction SilentlyContinue | Select-Object -First 1
+
+          if (-not $makeappx) {
+            $makeappx = Get-ChildItem -Recurse -Path "C:\Program Files (x86)\Windows Kits" -Filter makeappx.exe -ErrorAction SilentlyContinue | Select-Object -First 1
+          }
+
+          if ($makeappx) {
+            $makeappxDir = Split-Path $makeappx.FullName -Parent
+            echo $makeappxDir | Out-File -FilePath $env:GITHUB_PATH -Encoding utf8 -Append
+            echo "MAKEAPPX_PATH=$makeappxDir" | Out-File -FilePath $env:GITHUB_ENV -Encoding utf8 -Append
+          } else {
+            Get-ChildItem "C:\Program Files (x86)\Windows Kits" -Directory -ErrorAction SilentlyContinue | ForEach-Object { Write-Host $_.FullName }
+            exit 1
+          }
+
+
+      - name: Check makeappx (debug purpose only)
+        shell: cmd
+        run: |
+          echo MAKEAPPX_PATH=%MAKEAPPX_PATH%
+          where makeappx.exe
+
       - name: Checkout
         uses: actions/checkout@v4
         with:
@@ -207,13 +241,23 @@ jobs:
 
       - name: Build desktop distributions (Windows)
         shell: bash
-        run: ./gradlew --stacktrace createReleaseDistributable packageReleasePlatformZip
+        run: ./gradlew --stacktrace packageReleaseMsix
 
-      - name: Upload Windows desktop artifacts
+      - name: Decode signing certificate
+        shell: pwsh
+        run: |
+          $certPath = "build/cert.pfx"
+          [IO.File]::WriteAllBytes($certPath, [Convert]::FromBase64String($env:WINDOWS_CERT_FILE_BASE64))
+
+      - name: Sign MSIX
+        shell: bash
+        run: ./gradlew --stacktrace notarizeReleaseMsix
+
+      - name: Upload Windows MSIX installer
         uses: actions/upload-artifact@v4
         with:
-          name: desktop-windows-artifacts
-          path: build/compose/binaries/main-release/**
+          name: windows-msix-artifacts
+          path: build/compose/binaries/main-release/**/*.msix
 
   desktop_macos:
     name: Desktop (macOS)
@@ -259,7 +303,7 @@ jobs:
   ios:
     name: iOS Archive
     runs-on: macos-latest
-    needs: [setup, desktop_macos]
+    needs: [ setup, desktop_macos ]
     steps:
       - name: Checkout
         uses: actions/checkout@v4

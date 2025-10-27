@@ -26,7 +26,7 @@ Android, Desktop, and Web artefacts on every merge request and on `main`.
 - **Desktop (macOS/Linux)** — Compose Desktop targets under `src/desktopMain`; Linux and macOS release DMG/ZIP/Flatpak bundles are
   produced by `createReleaseDistributable` (plus `packageReleasePlatformZip`). When `APPLE_ID`/`APPLE_NOTARIZATION_PASSWORD` are
   present the macOS job enables automatic signing and notarisation.
-- **Desktop (Windows)** — Windows artefacts are built via `packageReleasePlatformZip`/`packageReleaseExe`. To ship signed ZIP/EXE files,
+- **Desktop (Windows)** — Windows artefacts are built via `packageReleaseMsix`/`packageReleaseExe`. To ship signed MSIX/EXE files,
   provide the certificate thumbprint and timestamp server URL through repository secrets.
 - **Web** — Kotlin/JS target in `src/webMain` bundled through the helper Gradle project `kotlin-js-store` and exposed as a
   zipped distributable.

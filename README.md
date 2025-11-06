@@ -15,6 +15,22 @@ Android, Desktop, and Web artefacts on every merge request and on `main`.
 - Node/Yarn are provisioned automatically by the Kotlin JS plugin.
 - Ruby + Bundler only when running Fastlane locally (`bundle install`).
 
+### What each platform build includes
+
+- **Android** — Gradle module under `src/androidMain` packaged via the shared `composeApp` target. Release artefacts are signed
+  with the keystore from `ANDROID_RELEASE_*` secrets and can be uploaded with Fastlane lanes in `fastlane/Fastfile`.
+- **iOS** — Xcode project in `iosApp/iosApp.xcodeproj` that wraps the shared Kotlin code from `src/iosMain`. The CI archive step
+  currently fails during `.p12` import: if `APPLE_CERTIFICATE_PASSWORD`/`APPLE_KEYCHAIN_PASSWORD` do not match the certificate,
+  the macOS runner cannot see the distribution identity. Local archives on a Mac succeed, so when CI breaks the first action is
+  to compare the stored secrets with the password embedded in the `.p12` and the `TeleCrypt iOS App Store` provisioning profile.
+- **Desktop (macOS/Linux)** — Compose Desktop targets under `src/desktopMain`; Linux and macOS release DMG/ZIP/Flatpak bundles are
+  produced by `createReleaseDistributable` (plus `packageReleasePlatformZip`). When `APPLE_ID`/`APPLE_NOTARIZATION_PASSWORD` are
+  present the macOS job enables automatic signing and notarisation.
+- **Desktop (Windows)** — Windows artefacts are built via `packageReleaseMsix`/`packageReleaseExe`. To ship signed MSIX/EXE files,
+  provide the certificate thumbprint and timestamp server URL through repository secrets.
+- **Web** — Kotlin/JS target in `src/webMain` bundled through the helper Gradle project `kotlin-js-store` and exposed as a
+  zipped distributable.
+
 ## Branding Workflow
 1. Edit `branding/branding.json`:
    - `appName` — display name.
@@ -67,8 +83,13 @@ Use a project-local Gradle cache to keep the workspace self-contained:
 | `ANDROID_RELEASE_KEY_ALIAS` | Alias inside keystore | Plain text |
 | `ANDROID_RELEASE_KEY_PASSWORD` | Key password | Plain text |
 | `ANDROID_SERVICE_ACCOUNT_JSON_BASE64` | Play Console service account | Base64-encoded JSON |
+| `APP_STORE_CONNECT_API_KEY` | Fastlane App Store Connect key JSON | Base64-encoded JSON |
+| `APP_STORE_CONNECT_KEY_ID` | App Store Connect key identifier | Plain text |
+| `APP_STORE_CONNECT_ISSUER_ID` | App Store Connect issuer ID | UUID |
 | `APPLE_KEYCHAIN_FILE_BASE64` | Temporary keychain for macOS/iOS jobs | Base64-encoded keychain |
 | `APPLE_KEYCHAIN_PASSWORD` | Password for temporary keychain | Plain text |
+| `APPLE_CERTIFICATE_PASSWORD` | Password used to import the `.p12` | Plain text |
+| `IOS_MOBILEPROVISION_BASE64` | Provisioning profile for App Store builds | Base64-encoded `.mobileprovision` |
 | `APPLE_TEAM_ID` | Apple Developer Team ID | Plain text |
 | `APPLE_ID` | Apple ID for notarisation/TestFlight | Plain text |
 | `APPLE_NOTARIZATION_PASSWORD` | App-specific password (`app-specific-password`) | Plain text |
@@ -76,6 +97,7 @@ Use a project-local Gradle cache to keep the workspace self-contained:
 | `WINDOWS_CODE_SIGNING_TIMESTAMP_SERVER` | Timestamp server URL | URL |
 | `SSH_PASSWORD_APP` / `SSH_PASSWORD_WEBSITE` | Legacy SFTP release passwords (only for the old GitLab jobs) | Plain text |
 | `ENABLE_IOS_BUILD` | Toggle iOS job (`true` to enable) | `true` / `false` |
+| `UPLOAD_TO_STORES` | Enables Fastlane upload steps | `true` / `false` |
 
 Set these in project settings before enabling the respective jobs. For Play/TestFlight uploads, ensure the service
 accounts/devices are authorised in their consoles.
@@ -85,18 +107,34 @@ accounts/devices are authorised in their consoles.
 - **Windows (`windows-latest`)**: GitHub-hosted runners (free, counted x2 toward the minute quota) yield Windows desktop ZIPs; enable MSIX/signing when certificates are configured.
 - **macOS (`macos-latest`)**: GitHub-hosted runners (x10 minute multiplier) produce DMG and optional iOS archives. A self-hosted Mac mini/VM is an alternative when quotas become tight.
 
+## Secrets & Credential Management
+
+- Keep the authoritative copies of signing materials (`.jks`, `.p12`, provisioning profiles, notarisation passwords) in a shared, access-controlled vault (e.g. Yandex Disk folder with restricted access + checksum manifest).
+- All CI secrets referenced in this README live under **Settings → Secrets and variables → Actions** in GitHub. When rotating, update both the vault and the repository settings in the same session.
+- For iOS, always regenerate the provisioning profile after issuing or renewing the distribution certificate. Import the `.mobileprovision` into Xcode locally to verify it before base64-encoding for CI.
+- For Windows, request the organisation’s code-signing certificate and add `WINDOWS_CODE_SIGNING_THUMBPRINT`/`WINDOWS_CODE_SIGNING_TIMESTAMP_SERVER` only after the certificate is installable on the GitHub-hosted runner (or provide a secure ZIP + password for self-hosted runners).
+
 ## Upstream Sync
-`tools/upstream_sync.sh` automates merging Tammy’s `main` into our fork and reapplies branding.
+`tools/upstream_sync.sh` is the one-button workflow for pulling Tammy upstream changes and reapplying TeleCrypt branding.
 
 ```bash
-bash tools/upstream_sync.sh            # sync main branch, auto-push to origin
+bash tools/upstream_sync.sh            # default scenario: sync main and push to origin
 UPSTREAM_REMOTE=upstream-dev \
 UPSTREAM_URL=git@github.com:connect2x/tammy.git \
 PUSH_UPDATES=false \
-  bash tools/upstream_sync.sh develop  # custom remote/branch without pushing
+  bash tools/upstream_sync.sh develop  # alternate remote/branch without pushing
 ```
 
-Requirements:
-- Clean working tree (script aborts if there are uncommitted changes).
-- Upstream remote is added automatically if missing.
-- Branding is reapplied via `tools/brandify.sh` when `branding/branding.json` exists.
+Key rules:
+- Start with a clean working tree.
+- If the `upstream` remote is missing the script adds it automatically.
+- After syncing the script invokes `tools/brandify.sh` to restore TeleCrypt icons and identifiers.
+
+While running, the script prompts you with three yes/no questions:
+1. Commit the brandify result immediately? (default `y`).
+2. Push the updates to origin? (default `y`).
+3. Allow an automatic `git rebase` when fast-forward is impossible? (default `y`).
+
+Answer with `y` or `n` (pressing Enter keeps the default). When the rebase hits a conflict the script stops at the conflicting
+state. Fix the files, run `git add`, then continue with `git rebase --continue`. If you need to roll back, use `git rebase --abort`
+and rerun the script—`--no-auto-commit` is handy when you want to review the diff first.

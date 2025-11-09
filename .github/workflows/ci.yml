@@ -318,6 +318,9 @@ jobs:
           PY
 
       - name: Pre-build Kotlin frameworks for iOS
+        env:
+          XCODE_TARGET_ARCHS: arm64
+          ARCHS: arm64
         run: ./gradlew --stacktrace embedAndSignAppleFrameworkForXcode
 
       - name: Setup Ruby (Fastlane)

@@ -20,6 +20,7 @@ end
 platform :ios do
   desc "Build TeleCrypt IPA for App Store/TestFlight distribution"
   lane :build do
+    ENV["FASTLANE_XCODEBUILD_SETTINGS_TIMEOUT"] ||= "120"
     key_id = env_value("APP_STORE_CONNECT_KEY_ID", "KEY_ID")
     issuer_id = env_value("APP_STORE_CONNECT_ISSUER_ID", "ISSUER_ID")
     api_key_content = env_value("APP_STORE_CONNECT_API_KEY")
@@ -143,6 +144,15 @@ platform :ios do
         signingStyle: "manual",
         signingCertificate: "Apple Distribution"
       }
+    )
+
+    UI.message("Build timing summary (xcodebuild -showBuildTimingSummary)")
+    sh(
+      "xcodebuild -showBuildTimingSummary " \
+      "-project iosApp/iosApp.xcodeproj " \
+      "-scheme 'Tammy for iOS' " \
+      "-configuration Release " \
+      "-derivedDataPath iosApp/build/DerivedData || true"
     )
 
     ipa_path

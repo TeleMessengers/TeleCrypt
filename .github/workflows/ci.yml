@@ -333,6 +333,8 @@ jobs:
         env:
           XCODE_TARGET_PLATFORM: iphoneos
           XCODE_TARGET_ARCHS: arm64
+          PLATFORM_NAME: iphoneos
+          ARCHS: arm64
         run: ./gradlew --stacktrace :embedAndSignAppleFrameworkForXcode
 
       - name: Setup Ruby (Fastlane)

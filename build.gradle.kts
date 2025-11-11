@@ -9,6 +9,7 @@ import org.jetbrains.compose.desktop.application.tasks.AbstractJPackageTask
 import org.jetbrains.kotlin.gradle.ExperimentalKotlinGradlePluginApi
 import org.jetbrains.kotlin.gradle.internal.ensureParentDirsCreated
 import org.jetbrains.kotlin.gradle.plugin.KotlinSourceSetTree
+import org.jetbrains.kotlin.gradle.plugin.mpp.KotlinNativeTarget
 import org.jetbrains.kotlin.gradle.targets.js.dsl.ExperimentalDistributionDsl
 import java.net.URI
 import java.net.http.HttpClient
@@ -57,6 +58,8 @@ enum class BuildFlavor { PROD, DEV }
 
 val buildFlavor =
     BuildFlavor.valueOf(System.getenv("TAMMY_BUILD_FLAVOR") ?: if (isCI) "PROD" else "DEV")
+val skipIosSimulatorTargets =
+    (System.getenv("CI_SKIP_IOS_SIMULATORS") ?: "false").equals("true", ignoreCase = true)
 
 registerMultiplatformLicensesTasks { licenseTask, target, variant ->
     // TODO: move this into c2x-conventions eventually
@@ -124,7 +127,14 @@ kotlin {
         }
         binaries.executable()
     }
-    listOf(iosX64(), iosArm64(), iosSimulatorArm64()).forEach { target ->
+    val iosTargets = mutableListOf<KotlinNativeTarget>().apply {
+        add(iosArm64())
+        if (!skipIosSimulatorTargets) {
+            add(iosSimulatorArm64())
+            add(iosX64())
+        }
+    }
+    iosTargets.forEach { target ->
         target.binaries.framework {
             export(sharedLibs.essenty.lifecycle)
             export(libs.trixnity.messenger.view)

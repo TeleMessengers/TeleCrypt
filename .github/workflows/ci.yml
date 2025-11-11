@@ -72,6 +72,61 @@ jobs:
       - name: Setup Gradle
         uses: gradle/actions/setup-gradle@v3
 
+      - name: Cache Gradle state
+        uses: actions/cache@v4
+        with:
+          path: |
+            .gradle/caches
+            .gradle/wrapper
+            .gradle/configuration-cache
+          key: ${{ runner.os }}-gradle-${{ hashFiles('gradle/libs.versions.toml', 'gradle/wrapper/gradle-wrapper.properties') }}
+          restore-keys: |
+            ${{ runner.os }}-gradle-
+
+      - name: Cache Gradle state
+        uses: actions/cache@v4
+        with:
+          path: |
+            .gradle/caches
+            .gradle/wrapper
+            .gradle/configuration-cache
+          key: ${{ runner.os }}-gradle-${{ hashFiles('gradle/libs.versions.toml', 'gradle/wrapper/gradle-wrapper.properties') }}
+          restore-keys: |
+            ${{ runner.os }}-gradle-
+
+      - name: Cache Gradle state
+        uses: actions/cache@v4
+        with:
+          path: |
+            .gradle/caches
+            .gradle/wrapper
+            .gradle/configuration-cache
+          key: ${{ runner.os }}-gradle-${{ hashFiles('gradle/libs.versions.toml', 'gradle/wrapper/gradle-wrapper.properties') }}
+          restore-keys: |
+            ${{ runner.os }}-gradle-
+
+      - name: Cache Gradle state
+        uses: actions/cache@v4
+        with:
+          path: |
+            .gradle/caches
+            .gradle/wrapper
+            .gradle/configuration-cache
+          key: ${{ runner.os }}-gradle-${{ hashFiles('gradle/libs.versions.toml', 'gradle/wrapper/gradle-wrapper.properties') }}
+          restore-keys: |
+            ${{ runner.os }}-gradle-
+
+      - name: Cache Gradle state
+        uses: actions/cache@v4
+        with:
+          path: |
+            .gradle/caches
+            .gradle/wrapper
+            .gradle/configuration-cache
+          key: ${{ runner.os }}-gradle-${{ hashFiles('gradle/libs.versions.toml', 'gradle/wrapper/gradle-wrapper.properties') }}
+          restore-keys: |
+            ${{ runner.os }}-gradle-
+
       - name: Configure Android SDK
         uses: android-actions/setup-android@v3
         with:
@@ -260,6 +315,8 @@ jobs:
     name: iOS Archive
     runs-on: macos-latest
     needs: [setup, desktop_macos]
+    env:
+      CI_SKIP_IOS_SIMULATORS: "true"
     steps:
       - name: Checkout
         uses: actions/checkout@v4
@@ -324,6 +381,7 @@ jobs:
           path: |
             shared/build/xcode-frameworks
             composeApp/build/xcode-frameworks
+            iosApp/..Tammy/build/xcode-frameworks
           key: ${{ runner.os }}-xcode-frameworks-${{ hashFiles('gradle/libs.versions.toml', 'iosApp/iosApp.xcodeproj/project.pbxproj') }}
           restore-keys: |
             ${{ runner.os }}-xcode-frameworks-
@@ -335,7 +393,15 @@ jobs:
           XCODE_TARGET_ARCHS: arm64
           PLATFORM_NAME: iphoneos
           ARCHS: arm64
-        run: ./gradlew --stacktrace :embedAndSignAppleFrameworkForXcode
+        run: ./gradlew --stacktrace --profile :embedAndSignAppleFrameworkForXcode
+
+      - name: Upload Gradle profile (embed step)
+        if: steps.xcode-fw-cache.outputs.cache-hit != 'true'
+        uses: actions/upload-artifact@v4
+        with:
+          name: gradle-embed-profile
+          path: build/reports/profile
+          if-no-files-found: ignore
 
       - name: Setup Ruby (Fastlane)
         uses: ruby/setup-ruby@v1

@@ -856,7 +856,7 @@ val createGitLabRelease by tasks.registering {
 }
 
 tasks.configureEach {
-    if (javaClass.name.endsWith("SyncComposeResourcesForIosTask")) {
+    if (javaClass.name.contains("SyncComposeResourcesForIosTask")) {
         @Suppress("UNCHECKED_CAST")
         val outputDir =
             javaClass.getMethod("getOutputDir").invoke(this) as? org.gradle.api.file.DirectoryProperty

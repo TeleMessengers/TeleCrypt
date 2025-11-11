@@ -6,6 +6,7 @@ import org.gradle.nativeplatform.platform.internal.DefaultNativePlatform
 import org.gradle.nativeplatform.platform.internal.DefaultOperatingSystem
 import org.jetbrains.compose.desktop.application.dsl.TargetFormat
 import org.jetbrains.compose.desktop.application.tasks.AbstractJPackageTask
+import org.jetbrains.compose.resources.SyncComposeResourcesForIosTask
 import org.jetbrains.kotlin.gradle.ExperimentalKotlinGradlePluginApi
 import org.jetbrains.kotlin.gradle.internal.ensureParentDirsCreated
 import org.jetbrains.kotlin.gradle.plugin.KotlinSourceSetTree
@@ -853,4 +854,9 @@ val createGitLabRelease by tasks.registering {
             .build()
         httpClient.send(request, HttpResponse.BodyHandlers.ofString())
     }
+}
+
+tasks.withType<SyncComposeResourcesForIosTask>().configureEach {
+    // Compose tasks need an explicit destination when invoked outside of Xcode
+    outputDir.set(layout.buildDirectory.dir("compose/resources/${name}"))
 }

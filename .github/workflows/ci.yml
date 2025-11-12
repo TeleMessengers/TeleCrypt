@@ -246,6 +246,18 @@ jobs:
       - name: Setup Gradle
         uses: gradle/actions/setup-gradle@v3
 
+      - name: Cache Gradle state
+        uses: actions/cache@v4
+        with:
+          path: |
+            .gradle/caches
+            .gradle/wrapper
+            .gradle/configuration-cache
+          key: ${{ runner.os }}-gradle-${{ hashFiles('gradle/libs.versions.toml', 'gradle/wrapper/gradle-wrapper.properties') }}
+          restore-keys: |
+            ${{ runner.os }}-gradle-
+          save-always: true
+
       - name: Cache Kotlin Native
         uses: actions/cache@v4
         with:
@@ -255,6 +267,7 @@ jobs:
           key: ${{ runner.os }}-konan-${{ hashFiles('gradle/libs.versions.toml') }}
           restore-keys: |
             ${{ runner.os }}-konan-
+          save-always: true
 
       - name: Apply branding
         shell: bash
@@ -289,6 +302,18 @@ jobs:
       - name: Setup Gradle
         uses: gradle/actions/setup-gradle@v3
 
+      - name: Cache Gradle state
+        uses: actions/cache@v4
+        with:
+          path: |
+            .gradle/caches
+            .gradle/wrapper
+            .gradle/configuration-cache
+          key: ${{ runner.os }}-gradle-${{ hashFiles('gradle/libs.versions.toml', 'gradle/wrapper/gradle-wrapper.properties') }}
+          restore-keys: |
+            ${{ runner.os }}-gradle-
+          save-always: true
+
       - name: Cache Kotlin Native
         uses: actions/cache@v4
         with:
@@ -298,6 +323,7 @@ jobs:
           key: ${{ runner.os }}-konan-${{ hashFiles('gradle/libs.versions.toml') }}
           restore-keys: |
             ${{ runner.os }}-konan-
+          save-always: true
 
       - name: Apply branding
         run: tools/brandify.sh branding/branding.json
@@ -352,6 +378,17 @@ jobs:
           key: ${{ runner.os }}-xcode-derived-${{ hashFiles('iosApp/iosApp.xcodeproj/project.pbxproj', 'gradle/libs.versions.toml') }}
           restore-keys: |
             ${{ runner.os }}-xcode-derived-
+          save-always: true
+
+      - name: Detect iOS SDK version
+        run: |
+          SDK_VERSION=$(xcrun --sdk iphoneos --show-sdk-platform-version 2>/dev/null || echo "")
+          if [ -n "$SDK_VERSION" ]; then
+            echo "IOS_SDK_VERSION=$SDK_VERSION" >> "$GITHUB_ENV"
+            echo "IOS_SDK_NAME=iphoneos$SDK_VERSION" >> "$GITHUB_ENV"
+          else
+            echo "IOS_SDK_NAME=iphoneos" >> "$GITHUB_ENV"
+          fi
 
       - name: Diagnose iOS signing inputs
         run: |
@@ -385,15 +422,16 @@ jobs:
           key: ${{ runner.os }}-xcode-frameworks-${{ hashFiles('gradle/libs.versions.toml', 'iosApp/iosApp.xcodeproj/project.pbxproj') }}
           restore-keys: |
             ${{ runner.os }}-xcode-frameworks-
+          save-always: true
 
       - name: Pre-build Kotlin frameworks (Gradle)
         if: steps.xcode-fw-cache.outputs.cache-hit != 'true'
         env:
-          XCODE_TARGET_PLATFORM: iphoneos
+          XCODE_TARGET_PLATFORM: ${{ env.IOS_SDK_NAME || 'iphoneos' }}
           XCODE_TARGET_ARCHS: arm64
           PLATFORM_NAME: iphoneos
           ARCHS: arm64
-          SDK_NAME: iphoneos
+          SDK_NAME: ${{ env.IOS_SDK_NAME || 'iphoneos' }}
           CONFIGURATION: Release
           TARGET_BUILD_DIR: ${{ github.workspace }}/iosApp/build/XcodePrebuild
           FRAMEWORKS_FOLDER_PATH: Frameworks

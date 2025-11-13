@@ -148,7 +148,7 @@
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 			shellPath = /bin/bash;
-			shellScript = "cd \"$SRCROOT/..\"\nset -euo pipefail\nPREBUILT=false\nfor dir in composeApp/build/xcode-frameworks shared/build/xcode-frameworks iosApp/..Tammy/build/xcode-frameworks; do\n  if [[ -d \"$dir\" ]] && ls -A \"$dir\" >/dev/null 2>&1; then\n    PREBUILT=true\n    break\n  fi\ndone\necho \"::notice::[embed] diag CI_SKIP_GRADLE_EMBED=${CI_SKIP_GRADLE_EMBED:-<unset>} PREBUILT=$PREBUILT\"\nif [[ \"${CI_SKIP_GRADLE_EMBED:-}\" == \"true\" && \"$PREBUILT\" == \"true\" ]]; then\n  echo \"::notice::[embed] skip gradle (prebuilt frameworks detected)\"\n  exit 0\nfi\necho \"::notice::[embed] start $(date)\"\n/usr/bin/env time -l ./gradlew :embedAndSignAppleFrameworkForXcode\nSTATUS=$?\necho \"::notice::[embed] end $(date) status=$STATUS\"\nexit $STATUS\n";
+			shellScript = "\"$SRCROOT/../iosApp/scripts/embed_frameworks.sh\"\n";
 		};
 /* End PBXShellScriptBuildPhase section */
 

@@ -337,10 +337,117 @@ jobs:
           name: desktop-macos-artifacts
           path: build/compose/binaries/main-release/**
 
+  ios_prebuild:
+    name: Pre-build iOS frameworks
+    runs-on: macos-latest
+    needs: setup
+    env:
+      CI_SKIP_IOS_SIMULATORS: "true"
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Setup Java
+        uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: 21
+
+      - name: Setup Gradle
+        uses: gradle/actions/setup-gradle@v3
+
+      - name: Cache Gradle state
+        uses: actions/cache@v4
+        with:
+          path: |
+            .gradle/caches
+            .gradle/wrapper
+            .gradle/configuration-cache
+          key: ${{ runner.os }}-gradle-${{ hashFiles('gradle/libs.versions.toml', 'gradle/wrapper/gradle-wrapper.properties') }}
+          restore-keys: |
+            ${{ runner.os }}-gradle-
+          save-always: true
+
+      - name: Cache Kotlin Native
+        uses: actions/cache@v4
+        with:
+          path: |
+            .konan
+            .kotlin
+          key: ${{ runner.os }}-konan-${{ hashFiles('gradle/libs.versions.toml') }}
+          restore-keys: |
+            ${{ runner.os }}-konan-
+          save-always: true
+
+      - name: Apply branding
+        run: tools/brandify.sh branding/branding.json
+
+      - name: Detect iOS SDK version
+        run: |
+          SDK_VERSION=$(xcrun --sdk iphoneos --show-sdk-platform-version 2>/dev/null || echo "")
+          if [ -n "$SDK_VERSION" ]; then
+            echo "IOS_SDK_VERSION=$SDK_VERSION" >> "$GITHUB_ENV"
+            echo "IOS_SDK_NAME=iphoneos$SDK_VERSION" >> "$GITHUB_ENV"
+          else
+            echo "IOS_SDK_NAME=iphoneos" >> "$GITHUB_ENV"
+          fi
+
+      - name: Restore Generated Xcode frameworks (if any)
+        id: xcode-fw-cache
+        uses: actions/cache@v4
+        with:
+          path: |
+            shared/build/xcode-frameworks
+            composeApp/build/xcode-frameworks
+            iosApp/..Tammy/build/xcode-frameworks
+          key: ${{ runner.os }}-xcode-frameworks-${{ hashFiles('gradle/libs.versions.toml', 'iosApp/iosApp.xcodeproj/project.pbxproj') }}
+          restore-keys: |
+            ${{ runner.os }}-xcode-frameworks-
+          save-always: true
+
+      - name: Pre-build Kotlin frameworks (Gradle)
+        if: steps.xcode-fw-cache.outputs.cache-hit != 'true'
+        env:
+          XCODE_TARGET_PLATFORM: ${{ env.IOS_SDK_NAME || 'iphoneos' }}
+          XCODE_TARGET_ARCHS: arm64
+          PLATFORM_NAME: iphoneos
+          ARCHS: arm64
+          SDK_NAME: ${{ env.IOS_SDK_NAME || 'iphoneos' }}
+          CONFIGURATION: Release
+          TARGET_BUILD_DIR: ${{ github.workspace }}/iosApp/build/XcodePrebuild
+          FRAMEWORKS_FOLDER_PATH: Frameworks
+          BUILT_PRODUCTS_DIR: ${{ github.workspace }}/iosApp/build/XcodePrebuild
+          EXPANDED_CODE_SIGN_IDENTITY: "-"
+          ACTION: build
+        run: |
+          mkdir -p iosApp/build/XcodePrebuild/Frameworks
+          ./gradlew --stacktrace --profile :embedAndSignAppleFrameworkForXcode
+
+      - name: Upload Gradle profile (embed step)
+        if: steps.xcode-fw-cache.outputs.cache-hit != 'true'
+        uses: actions/upload-artifact@v4
+        with:
+          name: gradle-embed-profile
+          path: build/reports/profile
+          if-no-files-found: ignore
+
+      - name: Upload prebuilt frameworks
+        uses: actions/upload-artifact@v4
+        with:
+          name: ios-prebuilt-frameworks
+          if-no-files-found: error
+          retention-days: 3
+          path: |
+            shared/build/xcode-frameworks
+            composeApp/build/xcode-frameworks
+            iosApp/..Tammy/build/xcode-frameworks
+
   ios:
     name: iOS Archive
     runs-on: macos-latest
-    needs: [setup, desktop_macos]
+    needs: [setup, desktop_macos, ios_prebuild]
     env:
       CI_SKIP_IOS_SIMULATORS: "true"
     steps:
@@ -411,44 +518,11 @@ jobs:
           print_hash("IOS_MOBILEPROVISION_BASE64", "diag_profile_sha256")
           PY
 
-      - name: Restore Generated Xcode frameworks (if any)
-        id: xcode-fw-cache
-        uses: actions/cache@v4
+      - name: Download prebuilt iOS frameworks
+        uses: actions/download-artifact@v4
         with:
-          path: |
-            shared/build/xcode-frameworks
-            composeApp/build/xcode-frameworks
-            iosApp/..Tammy/build/xcode-frameworks
-          key: ${{ runner.os }}-xcode-frameworks-${{ hashFiles('gradle/libs.versions.toml', 'iosApp/iosApp.xcodeproj/project.pbxproj') }}
-          restore-keys: |
-            ${{ runner.os }}-xcode-frameworks-
-          save-always: true
-
-      - name: Pre-build Kotlin frameworks (Gradle)
-        if: steps.xcode-fw-cache.outputs.cache-hit != 'true'
-        env:
-          XCODE_TARGET_PLATFORM: ${{ env.IOS_SDK_NAME || 'iphoneos' }}
-          XCODE_TARGET_ARCHS: arm64
-          PLATFORM_NAME: iphoneos
-          ARCHS: arm64
-          SDK_NAME: ${{ env.IOS_SDK_NAME || 'iphoneos' }}
-          CONFIGURATION: Release
-          TARGET_BUILD_DIR: ${{ github.workspace }}/iosApp/build/XcodePrebuild
-          FRAMEWORKS_FOLDER_PATH: Frameworks
-          BUILT_PRODUCTS_DIR: ${{ github.workspace }}/iosApp/build/XcodePrebuild
-          EXPANDED_CODE_SIGN_IDENTITY: "-"
-          ACTION: build
-        run: |
-          mkdir -p iosApp/build/XcodePrebuild/Frameworks
-          ./gradlew --stacktrace --profile :embedAndSignAppleFrameworkForXcode
-
-      - name: Upload Gradle profile (embed step)
-        if: steps.xcode-fw-cache.outputs.cache-hit != 'true'
-        uses: actions/upload-artifact@v4
-        with:
-          name: gradle-embed-profile
-          path: build/reports/profile
-          if-no-files-found: ignore
+          name: ios-prebuilt-frameworks
+          path: .
 
       - name: Setup Ruby (Fastlane)
         uses: ruby/setup-ruby@v1

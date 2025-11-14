@@ -398,9 +398,7 @@ jobs:
         id: xcode-fw-cache
         uses: actions/cache@v4
         with:
-          path: |
-            shared/build/xcode-frameworks
-            composeApp/build/xcode-frameworks
+          path: build/xcode-frameworks
           key: ${{ runner.os }}-xcode-frameworks-${{ hashFiles('gradle/libs.versions.toml', 'iosApp/iosApp.xcodeproj/project.pbxproj') }}
           restore-keys: |
             ${{ runner.os }}-xcode-frameworks-
@@ -438,9 +436,7 @@ jobs:
           name: ios-prebuilt-frameworks
           if-no-files-found: error
           retention-days: 3
-          path: |
-            shared/build/xcode-frameworks
-            composeApp/build/xcode-frameworks
+          path: build/xcode-frameworks
 
   ios:
     name: iOS Archive
@@ -520,7 +516,7 @@ jobs:
         uses: actions/download-artifact@v4
         with:
           name: ios-prebuilt-frameworks
-          path: .
+          path: build
 
       - name: Setup Ruby (Fastlane)
         uses: ruby/setup-ruby@v1

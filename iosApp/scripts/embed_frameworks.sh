@@ -46,7 +46,8 @@ copy_from_dir() {
     return 1
   fi
   mkdir -p "${DEST_DIR}"
-  rsync -a "${src}/" "${DEST_DIR}/"
+  local rsync_flags=(-a --exclude '*.dSYM' --exclude '*.dSYM/' --exclude '*/Contents/Resources/DWARF/*')
+  rsync "${rsync_flags[@]}" "${src}/" "${DEST_DIR}/"
 }
 
 codesign_frameworks() {

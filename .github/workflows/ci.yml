@@ -518,6 +518,11 @@ jobs:
           name: ios-prebuilt-frameworks
           path: build
 
+      - name: Prepare prebuilt frameworks
+        run: |
+          rm -rf build/xcode-frameworks
+          mv build/ios-prebuilt-frameworks build/xcode-frameworks
+
       - name: Setup Ruby (Fastlane)
         uses: ruby/setup-ruby@v1
         with:

@@ -184,11 +184,19 @@ platform :ios do
 
     ipa_path = lane_context[SharedValues::IPA_OUTPUT_PATH]
     env_ipa = ENV["IOS_IPA_PATH"]
-    ipa_path ||= env_ipa unless env_ipa.to_s.empty?
-    unless ipa_path
-      ipa_path = Dir["iosApp/build/*.ipa"].max
+    if ipa_path.to_s.strip.empty? && !env_ipa.to_s.strip.empty?
+      expanded_env = File.expand_path(env_ipa)
+      if File.exist?(expanded_env)
+        ipa_path = expanded_env
+      else
+        UI.important("IOS_IPA_PATH points to #{expanded_env}, but the file is missing. Falling back to search.")
+      end
     end
-    ipa_path = File.expand_path(ipa_path) if ipa_path
+    ipa_path = File.expand_path(ipa_path) if ipa_path && !ipa_path.to_s.strip.empty?
+    unless ipa_path && File.exist?(ipa_path)
+      ipa_path = Dir["iosApp/build/*.ipa"].max
+      ipa_path = File.expand_path(ipa_path) if ipa_path
+    end
     UI.user_error!("IPA not found — run fastlane ios build first") unless ipa_path && File.exist?(ipa_path)
     UI.message("Uploading IPA from #{ipa_path}")
 

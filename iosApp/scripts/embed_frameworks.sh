@@ -32,7 +32,7 @@ for dir in "${PREBUILT_DIRS[@]}"; do
 done
 
 CI_FLAG="${CI_SKIP_GRADLE_EMBED:-<unset>}"
-echo "::notice::[embed] diag CI_SKIP_GRADLE_EMBED=${CI_FLAG} PREBUILT=${has_prebuilt}"
+echo "::notice::[embed] diag CI_SKIP_GRADLE_EMBED=${CI_FLAG} CONFIG=${CONFIGURATION} SDK=${SDK_NAME} PREBUILT=${has_prebuilt}"
 
 copy_from_dir() {
   local base="$1"

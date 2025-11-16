@@ -524,7 +524,32 @@ jobs:
           if [ -d build/ios-prebuilt-frameworks/build/xcode-frameworks ]; then
             mv build/ios-prebuilt-frameworks/build/xcode-frameworks build/xcode-frameworks
           elif [ -d build/ios-prebuilt-frameworks/Release ]; then
-            mv build/ios-prebuilt-frameworks build/xcode-frameworks
+            python3 - <<'PY'
+import os, shutil, re
+base = 'build/ios-prebuilt-frameworks'
+for platform in os.listdir(base):
+    plat_path = os.path.join(base, platform)
+    if not os.path.isdir(plat_path):
+        continue
+    match = re.match(r'^(\w+?)(?:-(.*))?$', platform)
+    if match:
+        config = match.group(1)
+        sdk = match.group(2)
+    else:
+        config, sdk = 'Release', platform
+    for item in os.listdir(plat_path):
+        src = os.path.join(plat_path, item)
+        if os.path.isdir(src) and sdk is None:
+            sdk = item
+            continue
+        dst_dir = os.path.join('build', 'xcode-frameworks', config, sdk)
+        os.makedirs(dst_dir, exist_ok=True)
+        dst = os.path.join(dst_dir, item)
+        if os.path.isdir(src):
+            shutil.copytree(src, dst, dirs_exist_ok=True)
+        else:
+            shutil.copy2(src, dst)
+PY
           else
             echo "missing ios-prebuilt-frameworks artifact"
             ls -R build

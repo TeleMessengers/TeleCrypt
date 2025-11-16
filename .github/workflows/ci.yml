@@ -524,31 +524,29 @@ jobs:
           if [ -d build/ios-prebuilt-frameworks/build/xcode-frameworks ]; then
             mv build/ios-prebuilt-frameworks/build/xcode-frameworks build/xcode-frameworks
           elif [ -d build/ios-prebuilt-frameworks/Release ]; then
-            python3 - <<'PY'
+            python3 <<'PY'
 import os, shutil, re
 base = 'build/ios-prebuilt-frameworks'
+out_root = os.path.join('build', 'xcode-frameworks')
+os.makedirs(out_root, exist_ok=True)
 for platform in os.listdir(base):
     plat_path = os.path.join(base, platform)
     if not os.path.isdir(plat_path):
         continue
     match = re.match(r'^(\w+?)(?:-(.*))?$', platform)
-    if match:
-        config = match.group(1)
-        sdk = match.group(2)
-    else:
-        config, sdk = 'Release', platform
+    config = match.group(1) if match else 'Release'
+    sdk = match.group(2) if match and match.group(2) else None
     for item in os.listdir(plat_path):
         src = os.path.join(plat_path, item)
         if os.path.isdir(src) and sdk is None:
             sdk = item
             continue
-        dst_dir = os.path.join('build', 'xcode-frameworks', config, sdk)
-        os.makedirs(dst_dir, exist_ok=True)
-        dst = os.path.join(dst_dir, item)
+        dest = os.path.join(out_root, config, sdk or 'unknown', item)
+        os.makedirs(os.path.dirname(dest), exist_ok=True)
         if os.path.isdir(src):
-            shutil.copytree(src, dst, dirs_exist_ok=True)
+            shutil.copytree(src, dest, dirs_exist_ok=True)
         else:
-            shutil.copy2(src, dst)
+            shutil.copy2(src, dest)
 PY
           else
             echo "missing ios-prebuilt-frameworks artifact"

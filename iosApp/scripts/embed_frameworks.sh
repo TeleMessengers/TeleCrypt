@@ -82,6 +82,11 @@ elif [[ "${CI_SKIP_GRADLE_EMBED:-}" == "true" && "${has_prebuilt}" != "true" ]];
   echo "::warning::[embed] skip requested but no prebuilt frameworks found"
 fi
 
+if [[ "${CI_SKIP_GRADLE_EMBED:-}" == "true" && "${CI:-}" == "true" ]]; then
+  echo "::error::[embed] refusing to rerun Gradle on CI"
+  exit 1
+fi
+
 echo "::notice::[embed] start $(date)"
 /usr/bin/env time -l ./gradlew :embedAndSignAppleFrameworkForXcode
 STATUS=$?

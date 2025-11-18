@@ -537,12 +537,29 @@ val notarizeReleaseMsix by tasks.registering(Exec::class) {
         "/td", "sha256" // timestamp digest algorithm
     )
     System.getenv("WINDOWS_CODE_SIGNING_TIMESTAMP_SERVER")
+        ?.takeIf { it.isNotBlank() }
         ?.let { args("/tr", it) } // timestamp server
-    System.getenv("WINDOWS_CODE_SIGNING_THUMBPRINT")
-        ?.let { args("/sha1", it) } // key selection
+
+    val certFileProvider = layout.buildDirectory.file("cert.pfx")
+    doFirst {
+        val certFile = certFileProvider.get().asFile
+        val thumbprint = System.getenv("WINDOWS_CODE_SIGNING_THUMBPRINT")?.takeIf { it.isNotBlank() }
+        when {
+            certFile.exists() -> {
+                args("/f", certFile.absolutePath)
+                System.getenv("WINDOWS_CERT_PASSWORD")?.takeIf { it.isNotBlank() }?.let { args("/p", it) }
+            }
+            thumbprint != null -> args("/sha1", thumbprint)
+            else -> logger.warn("Neither WINDOWS_CERT_FILE_BASE64 nor WINDOWS_CODE_SIGNING_THUMBPRINT provided — MSIX will be unsigned")
+        }
+    }
     args(misxDistribution.originalFileName)
     dependsOn(packageReleaseMsix)
-    onlyIf { os.isWindows && isRelease }
+    onlyIf {
+        val certFile = certFileProvider.get().asFile
+        val thumbprint = System.getenv("WINDOWS_CODE_SIGNING_THUMBPRINT")
+        os.isWindows && isRelease && (certFile.exists() || !thumbprint.isNullOrBlank())
+    }
 }
 
 // #####################################################################################################################

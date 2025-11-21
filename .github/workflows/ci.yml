@@ -681,3 +681,28 @@ jobs:
           path: |
             iosApp/build/TeleCrypt.xcarchive
             iosApp/build/*.ipa
+
+  overlay_build:
+    name: Overlay Bootstrap & Build
+    runs-on: ubuntu-latest
+    needs: setup
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Setup Java
+        uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: 21
+
+      - name: Install Android SDK
+        uses: android-actions/setup-android@v3
+
+      - name: Bootstrap overlay layers
+        run: ./overlay/bootstrap.sh
+
+      - name: Build from overlay workspace
+        run: ./overlay/build.sh

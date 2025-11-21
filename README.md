@@ -53,7 +53,7 @@ Use a project-local Gradle cache to keep the workspace self-contained:
 - **GitHub Actions** (`.github/workflows/ci.yml`) runs on every push to `main`, on each pull request, and via manual `workflow_dispatch`:
   - `Android Release Build` (Ubuntu) — executes `bundleRelease assembleRelease`, publishing AAB/APK artefacts.
   - `Desktop & Web (Linux)` — Compose desktop/web packaging on Linux (`createReleaseDistributable packageReleasePlatformZip packageReleaseWebZip`).
-  - `Desktop (Windows)` — Compose packaging on Windows hosts (portable ZIP artefacts; MSIX/signing hooks can be enabled later).
+  - `Desktop (Windows)` — Compose packaging on Windows hosts (portable ZIP/EXE + подписанный `.msix`, если заданы сертификаты).
   - `Desktop (macOS)` — DMG/ZIP creation on macOS with automatic signing/notarisation when Apple secrets are present.
   - `iOS Archive` — optional job (enabled by the `ENABLE_IOS_BUILD` secret) running `xcodebuild … archive` on macOS and uploading the `.xcarchive`.
 - **Secrets** live in GitHub Actions (Settings → Secrets and variables → Actions). Never commit raw credentials. Keep the same names if you also mirror the pipeline to another CI.
@@ -74,6 +74,8 @@ Use a project-local Gradle cache to keep the workspace self-contained:
 | `APPLE_NOTARIZATION_PASSWORD` | App-specific password (`app-specific-password`) | Plain text |
 | `WINDOWS_CODE_SIGNING_THUMBPRINT` | Windows signing cert fingerprint | HEX string |
 | `WINDOWS_CODE_SIGNING_TIMESTAMP_SERVER` | Timestamp server URL | URL |
+| `WINDOWS_CERT_FILE_BASE64` | Alternative Windows signing certificate (`.pfx`) | Base64-encoded PFX |
+| `WINDOWS_CERT_PASSWORD` | Password for the `.pfx` above | Plain text |
 | `SSH_PASSWORD_APP` / `SSH_PASSWORD_WEBSITE` | Legacy SFTP release passwords (only for the old GitLab jobs) | Plain text |
 | `ENABLE_IOS_BUILD` | Toggle iOS job (`true` to enable) | `true` / `false` |
 
@@ -100,3 +102,25 @@ Requirements:
 - Clean working tree (script aborts if there are uncommitted changes).
 - Upstream remote is added automatically if missing.
 - Branding is reapplied via `tools/brandify.sh` when `branding/branding.json` exists.
+
+## Layered Source Layout
+
+TeleCrypt строится из нескольких уровней исходников:
+
+1. **Trixnity (Layer 1)** — ядро Matrix (event’ы, крипта, VoIP).
+2. **Trixnity‑Messenger (Layer 2)** — Compose‑UI, экраны поверх ядра.
+3. **Tammy/TeleCrypt (Layer 3)** — финальное приложение, брендинг, CI.
+4. **Overlay (Layer 4)** — будущий “тонкий” TeleCrypt‑repo, который автоматически подтягивает нужные SHA нижних слоёв и накладывает наши патчи.
+
+Практический процесс:
+
+- Каждая фича может затрагивать несколько слоёв (например, звонки → Layer 1 + Layer 2 + интеграция в Layer 3).
+- Даже если upstream не принял наши изменения, мы работаем на **своих форках** (`TeleCrypt-io/trixnity`, `TeleCrypt-io/trixnity-messenger`, `TeleCrypt-io/TeleCrypt-app`) и собираем приложение на конкретных SHA этих форков. SHA — это короткий git‑хэш коммита (`e611a07`), по нему скрипт однозначно понимает, какую версию брать.
+- Overlay вводит файл настроек вида `TRIXNITY_SHA=e611a07`, `MESSENGER_SHA=abc123`, `TELECRYPT_SHA=fed456`. Скрипт `./bootstrap` скачает именно эти версии, применит брендинг и соберёт TeleCrypt (локально и на CI).
+- Пока overlay не готов, держим три репозитория и идём “снизу вверх”. Когда overlay появится, разработчик работает в одном repo, а зависимости подтягиваются скриптом. Исходники слоёв (если нужно править ядро/мессенджер) по‑прежнему живут в своих форках.
+
+Альтернативы, которые рассматривались:
+
+- **Монорепа** — всё в одном Git, минимум зависимостей, но тяжело синкать upstream и repo разрастается.
+- **Submodule/subtree** — чистый TeleCrypt‑repo, а сторонние проекты подключены ссылками; нужно вручную обновлять SHA в `git submodule`, поэтому важна дисциплина.
+- **Overlay** (текущий план) — автоматизируем “подтяни SHA” и сборку: разработчик делает `git clone overlay`, `./bootstrap`, и получаем TeleCrypt со свежими версиями слоёв 1–3.

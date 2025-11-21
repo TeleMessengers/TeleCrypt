@@ -29,3 +29,18 @@ apple_keychain.keychain
 .flatpak-cache
 bin/
 temp
+.overlay/
+overlay/workspace/
+
+# CI artefacts pulled locally
+android_log.txt
+ios_job*.log
+ios_prebuild.log
+action_logs.zip
+logs.zip
+run*.zip
+android-artifacts/
+desktop-linux-artifacts/
+desktop-macos-artifacts/
+desktop-windows-artifacts/
+web-artifacts/

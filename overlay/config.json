@@ -1,0 +1,22 @@
+{
+  "layers": [
+    {
+      "name": "trixnity",
+      "repo": "https://github.com/TeleCrypt-io/trixnity.git",
+      "ref": "main",
+      "targetDir": "layers/trixnity"
+    },
+    {
+      "name": "trixnity-messenger",
+      "repo": "https://github.com/TeleCrypt-io/trixnity-messenger.git",
+      "ref": "main",
+      "targetDir": "layers/trixnity-messenger"
+    },
+    {
+      "name": "telecrypt-app",
+      "repo": "https://github.com/TeleCrypt-io/TeleCrypt-app.git",
+      "ref": "overlay-layer",
+      "targetDir": "layers/telecrypt-app"
+    }
+  ]
+}

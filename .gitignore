@@ -31,7 +31,6 @@ bin/
 temp
 .overlay/
 overlay/workspace/
-overlay/config.json
 
 # CI artefacts pulled locally
 android_log.txt
